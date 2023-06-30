@@ -17,4 +17,5 @@ if [ ! -f $CALC_DESKTOP ]; then
   echo "Download finished"
 fi
 
+
 jest --config jest.config.js "$@"
