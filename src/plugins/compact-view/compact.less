@@ -1,7 +1,8 @@
 .dcg-smart-textarea-container {
   font-size: var(--text-font-size) !important;
 }
-.dcg-main {
+.dcg-main,
+.dcg-evaluation-container {
   padding: 0 35px !important;
   margin-left: 4px !important;
   font-size: calc(
@@ -36,7 +37,7 @@
     transform: translate(11px, -18px) scale(0.5) !important;
   }
   .dcg-icon-remove {
-    transform: translate(7px, -7px) scale(0.6);
+    transform: translate(10px, -10px) scale(0.6);
   }
   .dcg-expressionitem {
     border-color: #666666;
@@ -66,7 +67,6 @@
     position: absolute;
     right: 15px;
     top: 2px;
-    font-size: 10px !important;
     max-width: 10% !important;
     overflow: hidden !important;
     transition: max-width 0.25s, overflow 0.25s;
@@ -91,5 +91,13 @@
     transform: scale(0.5);
     margin-left: -10px !important;
     z-index: 2;
+  }
+
+  // settings
+  .dcg-exp-action-button {
+    padding: 0 !important;
+    width: 14px !important;
+    height: 14px !important;
+    transform: scale(0.7) translateY(-5px);
   }
 }

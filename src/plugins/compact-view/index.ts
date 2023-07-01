@@ -1,6 +1,7 @@
 import { PluginController } from "../PluginController";
 import "./compact.less";
 import { Config, configList } from "./config";
+import { Calc } from "globals/window";
 
 export default class CompactView extends PluginController<Config> {
   static id = "compact-view" as const;
