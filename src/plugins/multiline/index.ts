@@ -5,7 +5,10 @@ import { MathQuillField, MathQuillView } from "components";
 import { DispatchedEvent } from "globals/Calc";
 import { Calc } from "globals/window";
 import { getController, mqKeystroke } from "plugins/intellisense/latex-parsing";
-import { registerCustomDispatchOverridingHandler } from "utils/listenerHelpers";
+import {
+  deregisterCustomDispatchOverridingHandler,
+  registerCustomDispatchOverridingHandler,
+} from "utils/listenerHelpers";
 
 function focusmq(mq: MathQuillField | undefined) {
   mq?.focus();
@@ -140,27 +143,35 @@ export default class Multiline extends PluginController<Config> {
     this.pendingMultilinifications = new Set();
   }
 
-  afterEnable() {
-    document.addEventListener("keydown", (e) => {
-      if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
-        const cursor = document.querySelector(".dcg-mq-cursor");
-        if (cursor) {
-          this.lastRememberedCursorX = cursor.getBoundingClientRect().left;
-        }
+  keydownHandler = (e: KeyboardEvent) => {
+    if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
+      const cursor = document.querySelector(".dcg-mq-cursor");
+      if (cursor) {
+        this.lastRememberedCursorX = cursor.getBoundingClientRect().left;
       }
+    }
 
-      if (e.key.toUpperCase() === "M" && e.ctrlKey) {
-        this.dequeueAllMultilinifications();
+    if (e.key.toUpperCase() === "M" && e.ctrlKey) {
+      this.dequeueAllMultilinifications();
+    }
+  };
+
+  mousedownHandler = () => {
+    setTimeout(() => {
+      const cursor = document.querySelector(".dcg-mq-cursor");
+      if (cursor) {
+        this.lastRememberedCursorX = cursor.getBoundingClientRect().left;
       }
     });
-    document.addEventListener("mousedown", (_) => {
-      setTimeout(() => {
-        const cursor = document.querySelector(".dcg-mq-cursor");
-        if (cursor) {
-          this.lastRememberedCursorX = cursor.getBoundingClientRect().left;
-        }
-      });
-    });
+  };
+
+  dispatcherID: string | undefined;
+
+  customDispatcherID: number | undefined;
+
+  afterEnable() {
+    document.addEventListener("keydown", this.keydownHandler);
+    document.addEventListener("mousedown", this.mousedownHandler);
 
     this.afterConfigChange();
 
@@ -175,7 +186,7 @@ export default class Multiline extends PluginController<Config> {
       this.dequeueAllMultilinifications();
     }, 0);
 
-    Calc.controller.dispatcher.register((e) => {
+    this.dispatcherID = Calc.controller.dispatcher.register((e) => {
       if (
         e.type === "set-item-latex" ||
         e.type === "undo" ||
@@ -195,7 +206,7 @@ export default class Multiline extends PluginController<Config> {
       }
     });
 
-    registerCustomDispatchOverridingHandler((evt) => {
+    this.customDispatcherID = registerCustomDispatchOverridingHandler((evt) => {
       if (evt.type === "on-special-key-pressed") {
         if (evt.key === "Up" || evt.key === "Down") {
           if (!this.doMultilineVerticalNav(evt.key)) return false;
@@ -205,11 +216,20 @@ export default class Multiline extends PluginController<Config> {
   }
 
   afterDisable() {
+    document.removeEventListener("keydown", this.keydownHandler);
+    document.removeEventListener("mousedown", this.mousedownHandler);
+
     this.unmultilineExpressions();
     document.body.classList.remove("multiline-expression-enabled");
 
+    if (this.dispatcherID)
+      Calc.controller.dispatcher.unregister(this.dispatcherID);
+
     if (this.multilineIntervalID !== undefined)
       clearInterval(this.multilineIntervalID);
+
+    if (this.customDispatcherID)
+      deregisterCustomDispatchOverridingHandler(this.customDispatcherID);
   }
 
   // navigates up/down through a multiline expression
@@ -222,8 +242,6 @@ export default class Multiline extends PluginController<Config> {
 
     let i = 0;
     let linesPassed = 0;
-
-    // vertical arrow nav
 
     const arrowdir = up ? "Left" : "Right";
     const oppositeArrowdir = !up ? "Left" : "Right";

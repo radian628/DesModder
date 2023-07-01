@@ -194,7 +194,7 @@ intellisense-jump2def-menu-instructions = has multiple definitions. Pick one to 
 ## Multiline
 multiline-name = Multiline Expressions
 multiline-desc = Split expressions onto multiple lines to better make use of available space. Can be done manually with Ctrl+M.
-multiline-opt-widthBeforeMultiline-name = Width Threshold
+multiline-opt-widthBeforeMultiline-name = Width Threshold (px)
 multiline-opt-widthBeforeMultiline-desc = Minimum width in pixels before a part of an expression is split onto multiple lines.
 multiline-opt-automaticallyMultilinify-desc = If enabled, automatically split expressions onto multiple lines.
 multiline-opt-automaticallyMultilinify-name = Automatically Multilinify
