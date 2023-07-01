@@ -42,7 +42,9 @@ export default class Multiline extends PluginController<Config> {
   }
 
   unmultilineExpressions() {
-    const mathfields = document.querySelectorAll(".dcg-mq-root-block");
+    const mathfields = document.querySelectorAll(
+      ".dcg-expressionitem .dcg-mq-root-block"
+    );
     for (const f of mathfields) {
       if (!(f instanceof HTMLElement)) continue;
       unverticalify(f);
@@ -60,10 +62,12 @@ export default class Multiline extends PluginController<Config> {
 
     if (e.type === "set-item-latex") {
       mathfields = document.querySelectorAll(
-        ".dcg-selected .dcg-mq-root-block"
+        ".dcg-expressionitem .dcg-selected .dcg-mq-root-block"
       );
     } else {
-      mathfields = document.querySelectorAll(".dcg-mq-root-block");
+      mathfields = document.querySelectorAll(
+        ".dcg-expressionitem .dcg-mq-root-block"
+      );
     }
 
     for (const f of mathfields) {
@@ -116,7 +120,7 @@ export default class Multiline extends PluginController<Config> {
           minWidth: this.settings.widthBeforeMultiline,
           mode: CollapseMode.Always,
         };
-        const arithmeticBreakers = ["+", "−"].map((s) => ({
+        const arithmeticBreakers = ["+", "−", "·"].map((s) => ({
           symbol: s,
           minWidth: this.settings.widthBeforeMultiline,
           mode: CollapseMode.AtMaxWidth,
