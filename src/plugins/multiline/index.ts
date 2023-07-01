@@ -223,16 +223,18 @@ export default class Multiline extends PluginController<Config> {
   // navigates up/down through a multiline expression
   // returns false or undefined if successful
   // returns true if at the start/end of a multiline expression
-  doMultilineVerticalNav(key: "Up" | "Down") {
-    const up = key === "Up";
+  doMultilineVerticalNav(key: "Up" | "Down" | "Shift-Up" | "Shift-Down") {
+    const up = key === "Up" || key === "Shift-Up";
+    const select = key.startsWith("Shift");
 
     const focusedmq = MathQuillView.getFocusedMathquill();
 
     let i = 0;
     let linesPassed = 0;
 
-    const arrowdir = up ? "Left" : "Right";
-    const oppositeArrowdir = !up ? "Left" : "Right";
+    const arrowdir = (select ? "Shift-" : "") + (up ? "Left" : "Right");
+    const oppositeArrowdir =
+      (select ? "Shift-" : "") + (!up ? "Left" : "Right");
 
     // focus the mq element that was focused before hitting up/down
     focusmq(focusedmq);
@@ -337,7 +339,7 @@ export default class Multiline extends PluginController<Config> {
       nextFromBefore = next;
 
       // failsafe to prevent any infinite loop bugs
-      if (i > 1000) {
+      if (i > 5000) {
         cleanup();
         return true;
       }
