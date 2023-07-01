@@ -190,3 +190,9 @@ manage-metadata-desc = Manage Metadata, such as GLesmos or pinned/unpinned statu
 intellisense-name = Intellisense
 intellisense-desc = Brings several common IDE features to Desmos, including autocompletion suggestions, function call help, and jump to definition. Documentation here:
 intellisense-jump2def-menu-instructions = has multiple definitions. Pick one to jump to below. Press ESC to close this menu.
+
+## Multiline
+multiline-name = Multiline Expressions
+multiline-desc = Split expressions onto multiple lines to better make use of available space. 
+multiline-opt-widthBeforeMultiline-name = Width Threshold
+multiline-opt-widthBeforeMultiline-desc = Minimum width in pixels before a part of an expression is split onto multiple lines.

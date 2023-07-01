@@ -1,3 +1,4 @@
+import { pollForValue } from "./utils";
 import { DispatchedEvent } from "globals/Calc";
 import { Calc, Console } from "globals/window";
 
@@ -58,6 +59,11 @@ export function setupDispatchOverride() {
     old.call(this, evt);
   };
 }
+
+void (async () => {
+  await pollForValue(() => Calc);
+  setupDispatchOverride();
+})();
 
 // "attach" a function onto an existing function, performing some functionality
 // and then optionally triggering the existing function.

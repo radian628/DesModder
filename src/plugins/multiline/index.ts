@@ -1,6 +1,6 @@
 import { PluginController } from "../PluginController";
-import "./compact.less";
 import { Config, configList } from "./config";
+import "./multiline.less";
 import { MathQuillField, MathQuillView } from "components";
 import { DispatchedEvent } from "globals/Calc";
 import { Calc } from "globals/window";
@@ -24,9 +24,9 @@ enum CollapseMode {
   Always,
 }
 
-export default class CompactView extends PluginController<Config> {
-  static id = "compact-view" as const;
-  static enabledByDefault = true;
+export default class Multiline extends PluginController<Config> {
+  static id = "multiline" as const;
+  static enabledByDefault = false;
   static config = configList;
 
   pendingMultilinifications = new Set<HTMLElement>();
@@ -36,19 +36,9 @@ export default class CompactView extends PluginController<Config> {
   multilineIntervalID: ReturnType<typeof setInterval> | undefined;
 
   afterConfigChange(): void {
-    if (this.settings.multilineExpressions) {
-      this.multilineExpressions({ type: "tick" });
-      document.body.classList.add("multiline-expression-enabled");
-    } else {
-      this.unmultilineExpressions();
-      document.body.classList.remove("multiline-expression-enabled");
-    }
-
-    if (this.settings.compactMode) {
-      document.body.classList.add("compact-view-enabled");
-    } else {
-      document.body.classList.remove("compact-view-enabled");
-    }
+    this.unmultilineExpressions();
+    this.multilineExpressions({ type: "tick" });
+    document.body.classList.add("multiline-expression-enabled");
   }
 
   unmultilineExpressions() {
@@ -91,7 +81,6 @@ export default class CompactView extends PluginController<Config> {
 
   afterEnable() {
     document.addEventListener("keydown", (e) => {
-      if (!this.settings.multilineExpressions) return;
       if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
         const cursor = document.querySelector(".dcg-mq-cursor");
         if (cursor) {
@@ -100,7 +89,6 @@ export default class CompactView extends PluginController<Config> {
       }
     });
     document.addEventListener("mousedown", (_) => {
-      if (!this.settings.multilineExpressions) return;
       setTimeout(() => {
         const cursor = document.querySelector(".dcg-mq-cursor");
         if (cursor) {
@@ -120,17 +108,17 @@ export default class CompactView extends PluginController<Config> {
         const domManipHandlers: (() => void)[] = [];
         const commaBreaker = {
           symbol: ",",
-          minWidth: 380,
+          minWidth: this.settings.widthBeforeMultiline,
           mode: CollapseMode.Always,
         };
         const equalsBreaker = {
           symbol: "=",
-          minWidth: 380,
+          minWidth: this.settings.widthBeforeMultiline,
           mode: CollapseMode.Always,
         };
         const arithmeticBreakers = ["+", "−"].map((s) => ({
           symbol: s,
-          minWidth: 380,
+          minWidth: this.settings.widthBeforeMultiline,
           mode: CollapseMode.AtMaxWidth,
         }));
 
@@ -154,7 +142,7 @@ export default class CompactView extends PluginController<Config> {
               },
               piecewise: { symbols: [commaBreaker] },
             },
-            skipWidth: 380,
+            skipWidth: this.settings.widthBeforeMultiline,
           }
         );
 
@@ -167,7 +155,6 @@ export default class CompactView extends PluginController<Config> {
     }, 50);
 
     Calc.controller.dispatcher.register((e) => {
-      if (!this.settings.multilineExpressions) return;
       if (
         e.type === "set-item-latex" ||
         e.type === "undo" ||
@@ -189,6 +176,9 @@ export default class CompactView extends PluginController<Config> {
   }
 
   afterDisable() {
+    this.unmultilineExpressions();
+    document.body.classList.remove("multiline-expression-enabled");
+
     if (this.multilineIntervalID !== undefined)
       clearInterval(this.multilineIntervalID);
   }
