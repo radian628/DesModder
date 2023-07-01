@@ -35,6 +35,8 @@ export default class Multiline extends PluginController<Config> {
 
   multilineIntervalID: ReturnType<typeof setInterval> | undefined;
 
+  lastEditTime: number = Date.now();
+
   afterConfigChange(): void {
     this.unmultilineExpressions();
     this.multilineExpressions({ type: "tick" });
@@ -62,7 +64,7 @@ export default class Multiline extends PluginController<Config> {
 
     if (e.type === "set-item-latex") {
       mathfields = document.querySelectorAll(
-        ".dcg-expressionitem .dcg-selected .dcg-mq-root-block"
+        ".dcg-expressionitem.dcg-selected .dcg-mq-root-block"
       );
     } else {
       mathfields = document.querySelectorAll(
@@ -83,6 +85,61 @@ export default class Multiline extends PluginController<Config> {
     }
   }
 
+  dequeueAllMultilinifications() {
+    for (const f of this.pendingMultilinifications) {
+      // revert everything to its original state so we have proper width calculations
+      unverticalify(f);
+
+      // settings for where and how to put line breaks
+      const domManipHandlers: (() => void)[] = [];
+      const commaBreaker = {
+        symbol: ",",
+        minWidth: this.settings.widthBeforeMultiline,
+        mode: CollapseMode.Always,
+      };
+      const equalsBreaker = {
+        symbol: "=",
+        minWidth: this.settings.widthBeforeMultiline,
+        mode: CollapseMode.Always,
+      };
+      const arithmeticBreakers = ["+", "−", "·"].map((s) => ({
+        symbol: s,
+        minWidth: this.settings.widthBeforeMultiline,
+        mode: CollapseMode.AtMaxWidth,
+      }));
+
+      // add line breaks
+      verticalify(
+        f,
+        {
+          enclosingBracketType: undefined,
+          containerType: "root",
+          domManipHandlers,
+        },
+        {
+          collapse: {
+            functionCall: { symbols: [commaBreaker] },
+            functionDef: { symbols: [] },
+            all: { symbols: [...arithmeticBreakers] },
+            root: { symbols: [equalsBreaker, commaBreaker] },
+            other: { symbols: [] },
+            list: {
+              symbols: [{ ...commaBreaker, mode: CollapseMode.AtMaxWidth }],
+            },
+            piecewise: { symbols: [commaBreaker] },
+          },
+          skipWidth: this.settings.widthBeforeMultiline,
+        }
+      );
+
+      // perform all dom writing (to prevent getBoundingClientRect-related slowdowns)
+      for (const h of domManipHandlers) h();
+    }
+
+    // clear multilinification cache
+    this.pendingMultilinifications = new Set();
+  }
+
   afterEnable() {
     document.addEventListener("keydown", (e) => {
       if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
@@ -90,6 +147,10 @@ export default class Multiline extends PluginController<Config> {
         if (cursor) {
           this.lastRememberedCursorX = cursor.getBoundingClientRect().left;
         }
+      }
+
+      if (e.key.toUpperCase() === "M" && e.ctrlKey) {
+        this.dequeueAllMultilinifications();
       }
     });
     document.addEventListener("mousedown", (_) => {
@@ -104,61 +165,25 @@ export default class Multiline extends PluginController<Config> {
     this.afterConfigChange();
 
     this.multilineIntervalID = setInterval(() => {
-      for (const f of this.pendingMultilinifications) {
-        // revert everything to its original state so we have proper width calculations
-        unverticalify(f);
+      if (
+        Date.now() - this.lastEditTime <
+          this.settings.multilinifyDelayAfterEdit ||
+        !this.settings.automaticallyMultilinify
+      )
+        return;
 
-        // settings for where and how to put line breaks
-        const domManipHandlers: (() => void)[] = [];
-        const commaBreaker = {
-          symbol: ",",
-          minWidth: this.settings.widthBeforeMultiline,
-          mode: CollapseMode.Always,
-        };
-        const equalsBreaker = {
-          symbol: "=",
-          minWidth: this.settings.widthBeforeMultiline,
-          mode: CollapseMode.Always,
-        };
-        const arithmeticBreakers = ["+", "−", "·"].map((s) => ({
-          symbol: s,
-          minWidth: this.settings.widthBeforeMultiline,
-          mode: CollapseMode.AtMaxWidth,
-        }));
-
-        // add line breaks
-        verticalify(
-          f,
-          {
-            enclosingBracketType: undefined,
-            containerType: "root",
-            domManipHandlers,
-          },
-          {
-            collapse: {
-              functionCall: { symbols: [commaBreaker] },
-              functionDef: { symbols: [] },
-              all: { symbols: [...arithmeticBreakers] },
-              root: { symbols: [equalsBreaker, commaBreaker] },
-              other: { symbols: [] },
-              list: {
-                symbols: [{ ...commaBreaker, mode: CollapseMode.AtMaxWidth }],
-              },
-              piecewise: { symbols: [commaBreaker] },
-            },
-            skipWidth: this.settings.widthBeforeMultiline,
-          }
-        );
-
-        // perform all dom writing (to prevent getBoundingClientRect-related slowdowns)
-        for (const h of domManipHandlers) h();
-      }
-
-      // clear multilinification cache
-      this.pendingMultilinifications = new Set();
-    }, 50);
+      this.dequeueAllMultilinifications();
+    }, 0);
 
     Calc.controller.dispatcher.register((e) => {
+      if (
+        e.type === "set-item-latex" ||
+        e.type === "undo" ||
+        e.type === "redo"
+      ) {
+        this.lastEditTime = Date.now();
+      }
+
       if (
         e.type === "set-item-latex" ||
         e.type === "undo" ||
