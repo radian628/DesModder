@@ -2,6 +2,7 @@
 import GLesmos from "./GLesmos";
 import BetterEvaluationView from "./better-evaluation-view";
 import BuiltinSettings from "./builtin-settings";
+import CompactView from "./compact-view";
 import DebugMode from "./debug-mode";
 import DuplicateHotkey from "./duplicate-hotkey";
 import FindReplace from "./find-replace";
@@ -115,6 +116,7 @@ export const keyToPlugin = {
   metadata: ManageMetadata,
   intellisense: Intellisense,
   multiline: Multiline,
+  compactView: CompactView,
 } satisfies Record<string, Plugin<any>>;
 
 export const pluginList = Object.values(keyToPlugin);
@@ -164,6 +166,7 @@ export class TransparentPlugins implements KeyToPluginInstance {
   get metadata () { return this.ep["manage-metadata"]; }
   get intellisense () { return this.ep["intellisense"]; }
   get multiline () { return this.ep["multiline"]; }
+  get compactView () { return this.ep["compact-view"]; }
 }
 
 export type IDToPluginSettings = {

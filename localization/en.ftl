@@ -200,3 +200,17 @@ multiline-opt-automaticallyMultilinify-desc = If enabled, automatically split ex
 multiline-opt-automaticallyMultilinify-name = Automatically Multilinify
 multiline-opt-multilinifyDelayAfterEdit-desc = Multiline expressions should be updated after no edits are made for this number of milliseconds.
 multiline-opt-multilinifyDelayAfterEdit-name = Edit Delay (ms)
+
+## Compact View
+compact-view-name = Compact View
+compact-view-desc = A variety of options for condensing the UI so you can see more on the screen at once.
+compact-view-opt-textFontSize-name = Text Font Size
+compact-view-opt-textFontSize-desc = Size of the font in text expressions.
+compact-view-opt-mathFontSize-name = Math Font Size
+compact-view-opt-mathFontSize-desc = Size of the font in mathematical expressions.
+compact-view-opt-bracketFontSizeFactor-name = Bracket Font Size Factor
+compact-view-opt-bracketFontSizeFactor-desc = Text inside of brackets (parentheses, curly braces, etc.) decreases in size by this factor.
+compact-view-opt-minimumFontSize-name = Min Font Size
+compact-view-opt-minimumFontSize-desc = The minimum possible math font size. Overrides Bracket Font Size Factor.
+compact-view-opt-removeSpacing-name = Remove Spacing
+compact-view-opt-removeSpacing-desc = Removes lots of empty space in the expressions list.
