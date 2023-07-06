@@ -64,6 +64,7 @@
   "dependencies": {
     "@codemirror/autocomplete": "^6.8.1",
     "@codemirror/commands": "^6.2.4",
+    "@codemirror/lang-javascript": "^6.1.9",
     "@codemirror/language": "^6.8.0",
     "@codemirror/lint": "^6.3.0",
     "@codemirror/search": "^6.5.0",

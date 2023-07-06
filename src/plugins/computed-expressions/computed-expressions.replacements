@@ -1,0 +1,43 @@
+# Computed Expressions replacements
+
+*plugin* `computed-expressions`
+
+
+## todo
+
+*Description* `todo`
+
+*Find* => `folderClass`
+```js
+class extends Ca {
+        didMount() {
+            this.onItemViewMounted()
+        }
+        willUnmount() {
+            this.onItemViewUnmounted()
+        }
+        template() {
+            return oi.createElement("div", {
+                class: ()=>({
+                    "dcg-do-not-blur": !0,
+                    "dcg-expressionitem": !0,
+                    "dcg-readonly": this.controller.isItemReadonly(this.id),
+                    "dcg-expressionfolder": !0,
+                    ____})____},
+                    __folderTemplate__)
+```
+
+
+
+*Find* inside `folderTemplate` => `folderTextarea`
+```js
+oi.createElement(Mu, __textareaSettings__)
+```
+
+
+
+
+*Replace* `folderTextarea` with
+```js
+DSM.replaceElement(() => oi.createElement(Mu, { ...__textareaSettings__,     model: () => this.model }), () => DSM.enabledPlugins?.["computed-expressions"]?.createFolderView.bind(DSM.enabledPlugins?.["computed-expressions"]))
+```

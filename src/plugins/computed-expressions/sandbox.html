@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Evalbox's Frame</title>
+    <script>
+      window.addEventListener("message", function (e) {
+        var mainWindow = e.source;
+        var result = "";
+
+        function expression(expr) {
+          mainWindow.postMessage(
+            {
+              type: "expression",
+              expr,
+              id: e.data.id,
+            },
+            event.origin
+          );
+        }
+
+        function clear() {
+          mainWindow.postMessage(
+            { type: "clear", id: e.data.id },
+            event.origin
+          );
+        }
+
+        try {
+          result = eval(e.data.code);
+        } catch (e) {
+          result = "eval() threw an exception.";
+        }
+      });
+    </script>
+  </head>
+</html>

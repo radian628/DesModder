@@ -3,6 +3,7 @@ import GLesmos from "./GLesmos";
 import BetterEvaluationView from "./better-evaluation-view";
 import BuiltinSettings from "./builtin-settings";
 import CompactView from "./compact-view";
+import ComputedExpressions from "./computed-expressions";
 import DebugMode from "./debug-mode";
 import DuplicateHotkey from "./duplicate-hotkey";
 import ExprActionButtons, { ActionButton } from "./expr-action-buttons";
@@ -121,6 +122,7 @@ export const keyToPlugin = {
   intellisense: Intellisense,
   compactView: CompactView,
   exprActionButtons: ExprActionButtons,
+  computedExpressions: ComputedExpressions,
 } satisfies Record<string, Plugin<any>>;
 
 export const pluginList = Object.values(keyToPlugin);
@@ -172,6 +174,7 @@ export class TransparentPlugins implements KeyToPluginInstance {
   get compactView () { return this.ep["compact-view"]; }
   get multiline () { return this.ep["multiline"]; }
   get exprActionButtons () { return this.ep["expr-action-buttons"]; }
+  get computedExpressions() { return this.ep["computed-expressions"]; }
 }
 
 export type IDToPluginSettings = {
