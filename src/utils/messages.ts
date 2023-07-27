@@ -36,6 +36,7 @@ type MessageContentToWindow =
       pluginsForceDisabled: PluginID[];
       pluginSettings: Record<PluginID, GenericSettings | undefined>;
       scriptURL: string;
+      sandboxURL: string;
     }
   | HeartbeatError;
 

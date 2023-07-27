@@ -21,6 +21,7 @@ export interface DWindow extends Window {
   Calc: CalcType;
   DesModder: any;
   DSM: DSM;
+  computedExpressionsSandboxURL?: string;
   DesModderPreload?: {
     pluginsForceDisabled: Set<PluginID>;
     pluginsEnabled: Record<PluginID, boolean | undefined>;

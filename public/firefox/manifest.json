@@ -21,7 +21,11 @@
       "all_frames": true
     }
   ],
-  "web_accessible_resources": ["script.js", "preloadScript.js"],
+  "web_accessible_resources": [
+    "script.js",
+    "preloadScript.js",
+    "plugins/computed-expressions/sandbox-src.js"
+  ],
   "permissions": [
     "https://*.desmos.com/*",
     "https://wakatime.com/api/v1/users/current/heartbeats",

@@ -62,6 +62,7 @@ listenToMessageDown((message) => {
       pluginsEnabled: message.pluginsEnabled,
       pluginSettings: message.pluginSettings,
     };
+    window.computedExpressionsSandboxURL = message.sandboxURL;
     // Helps with the case of replacements ran before initialization
     window.DSM = {
       insertElement,

@@ -68,6 +68,9 @@ export interface MathQuillConfig {
   supSubsRequireOperand?: boolean;
   restrictMismatchedBrackets?: boolean;
   typingPercentWritesPercentOf?: boolean;
+  handlers: {
+    moveOutOf(direction: 1 | -1): void;
+  };
 }
 
 export interface MathQuillField {

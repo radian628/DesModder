@@ -44,6 +44,9 @@ function getInitialData() {
       pluginsForceDisabled: pluginsForceDisabled(items),
       pluginSettings: pluginSettings(items),
       scriptURL: chrome.runtime.getURL("script.js"),
+      sandboxURL: chrome.runtime.getURL(
+        "plugins/computed-expressions/sandbox-src.js"
+      ),
     });
   });
 }

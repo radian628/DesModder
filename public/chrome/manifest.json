@@ -24,7 +24,12 @@
   ],
   "web_accessible_resources": [
     {
-      "resources": ["script.css", "script.js", "preload/script.js"],
+      "resources": [
+        "script.css",
+        "script.js",
+        "preload/script.js",
+        "plugins/computed-expressions/sandbox-src.js"
+      ],
       "matches": ["*://*.desmos.com/*"]
     }
   ],

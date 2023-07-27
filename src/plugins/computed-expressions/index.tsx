@@ -1,44 +1,38 @@
+import GraphStateSource from "../../../node_modules/@desmodder/graph-state/state.ts?raw";
+import APIDTS from "./api.d.ts?raw";
+import { embeddedMQPlugin } from "./embedded-mq-plugin";
 import "./index.less";
+import quoteStripper from "./quote-stripper.grammar";
 import sandboxHTML from "./sandbox.html";
 import { defaultKeymap } from "@codemirror/commands";
-import { javascript } from "@codemirror/lang-javascript";
 import {
+  LRLanguage,
   defaultHighlightStyle,
   syntaxHighlighting,
 } from "@codemirror/language";
 import { Diagnostic, linter } from "@codemirror/lint";
 import { EditorState } from "@codemirror/state";
 import { EditorView, keymap } from "@codemirror/view";
-import { ClassComponent, jsx } from "DCGView";
+import { parseMixed } from "@lezer/common";
+import { parser as jsParser } from "@lezer/javascript";
+import { jsx } from "DCGView";
 import { FolderModel } from "globals/models";
 import { Calc } from "globals/window";
 import { PluginController } from "plugins/PluginController";
+import { getTextModeConfig } from "plugins/text-mode";
+import { textModeParser } from "plugins/text-mode/lezer";
+import { Project } from "ts-morph";
 import * as ts from "typescript";
 
-function getTypescriptCompilerHost(view: EditorView): ts.CompilerHost {
-  return {
-    getSourceFile: (fileName, languageVersion, onError) => {
-      return ts.createSourceFile(
-        "index.ts",
-        view.state.doc.toString(),
-        languageVersion
+function addAllFoldersToTSProject(project: Project) {
+  for (const item of Calc.controller.getAllItemModels()) {
+    if (item.type === "folder") {
+      const folderSrc = project.createSourceFile(
+        `${item.id}.ts`,
+        item.title ?? ""
       );
-    },
-    getDefaultLibFileName: (opts) => "index.ts",
-    writeFile: () => {},
-    getCurrentDirectory: () => "/",
-    getCanonicalFileName: (name) => name,
-    useCaseSensitiveFileNames: () => false,
-    getNewLine: () => "\n",
-    fileExists: () => true,
-    readFile: (filename: string) => {
-      if (filename === "index.ts") {
-        return view.state.doc.toString();
-      } else {
-        return JSON.stringify(Calc.controller.getItemModel(filename));
-      }
-    },
-  };
+    }
+  }
 }
 
 export default class ComputedExpressions extends PluginController {
@@ -51,8 +45,12 @@ export default class ComputedExpressions extends PluginController {
     this.iframe = document.createElement("iframe");
     this.iframe.setAttribute("sandbox", "allow-scripts");
     this.iframe.setAttribute("origin", window.location.origin);
-    this.iframe.srcdoc = sandboxHTML;
+    this.iframe.srcdoc = sandboxHTML.replace(
+      "SRC_HERE",
+      window.computedExpressionsSandboxURL
+    );
     window.addEventListener("message", (msg) => {
+      if (msg.source !== this.iframe.contentWindow) return;
       const state = Calc.getState();
       if (msg.data.type === "expression") {
         const idx = state.expressions.list.findIndex(
@@ -60,8 +58,10 @@ export default class ComputedExpressions extends PluginController {
         );
         if (idx === -1) return;
         state.expressions.list.splice(idx + 1, 0, {
+          type: "expression",
           ...msg.data.expr,
           folderId: msg.data.id,
+          id: Calc.controller.generateId(),
         });
       } else if (msg.data.type === "clear") {
         state.expressions.list = state.expressions.list.filter(
@@ -94,32 +94,38 @@ export default class ComputedExpressions extends PluginController {
 
             if (tgt) {
               tgt.focus();
-              setTimeout(() => {
+              void (async () => {
                 if (!view) return;
 
-                const host: ts.CompilerHost = getTypescriptCompilerHost(view);
-
-                const prog = ts.createProgram({
-                  rootNames: ["index.ts"],
-                  options: {
+                const project = new Project({
+                  compilerOptions: {
                     strict: true,
+                    target: ts.ScriptTarget.ES5,
                   },
-                  host,
+                  skipAddingFilesFromTsConfig: true,
+                  useInMemoryFileSystem: true,
                 });
 
-                console.log(prog, prog.emit());
+                const src = project.createSourceFile(
+                  "index.ts",
+                  view.state.doc.toString()
+                );
 
-                const code = prog.emit().emittedFiles?.[0] ?? "";
+                const code = src.getEmitOutput().getOutputFiles()[0].getText();
 
                 // eslint-disable-next-line no-eval
                 self.iframe?.contentWindow?.postMessage(
                   {
                     code,
+                    tmConfig: (() => {
+                      const cfg = getTextModeConfig();
+                      return { ...cfg, parseDesmosLatex: undefined };
+                    })(),
                     id: Calc.controller.getSelectedItem()?.id ?? 0,
                   },
                   "*"
                 );
-              });
+              })();
             }
           }}
         >
@@ -133,31 +139,98 @@ export default class ComputedExpressions extends PluginController {
                 extensions: [
                   syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
                   keymap.of(defaultKeymap),
-                  javascript({ typescript: true }),
+                  LRLanguage.define({
+                    parser: jsParser.configure({
+                      dialect: "ts",
+                      wrap: parseMixed((node) => {
+                        const parent = node.node.parent;
+
+                        if (!parent) return null;
+
+                        const nodeContent = view?.state.doc.sliceString(
+                          parent.from,
+                          parent.to
+                        );
+
+                        if (
+                          node.name === "TemplateString" &&
+                          parent.name === "TaggedTemplateExpression" &&
+                          nodeContent?.startsWith("tm.")
+                        ) {
+                          return {
+                            parser: quoteStripper.configure({
+                              wrap: parseMixed((node) => {
+                                const nodeContent = view?.state.doc.sliceString(
+                                  node.from,
+                                  node.to
+                                );
+
+                                if (node.name === "Body") {
+                                  const nodeContent =
+                                    view?.state.doc.sliceString(
+                                      node.from,
+                                      node.to
+                                    );
+
+                                  return {
+                                    parser: textModeParser(),
+                                  };
+                                }
+                                return null;
+                              }),
+                            }),
+                          };
+                        }
+                        return null;
+                      }),
+                    }),
+                  }),
                   EditorView.updateListener.of((view) => {
                     oldview.props.onInput(view.state.doc.toString());
                   }),
+                  embeddedMQPlugin,
                   linter((view) => {
-                    const host: ts.CompilerHost =
-                      getTypescriptCompilerHost(view);
+                    // const host: ts.CompilerHost =
+                    //   getTypescriptCompilerHost(view);
 
-                    const prog = ts.createProgram({
-                      rootNames: ["index.ts"],
-                      options: {
+                    // const prog = ts.createProgram({
+                    //   rootNames: ["index.ts"],
+                    //   options: {
+                    //     strict: true,
+                    //   },
+                    //   host,
+                    // });
+
+                    const project = new Project({
+                      compilerOptions: {
                         strict: true,
+                        target: ts.ScriptTarget.ES5,
                       },
-                      host,
+                      skipAddingFilesFromTsConfig: true,
+                      useInMemoryFileSystem: true,
                     });
+
+                    project.createSourceFile(
+                      "index.ts",
+                      view.state.doc.toString()
+                    );
+
+                    const graphstate = project.createSourceFile(
+                      "graphstate.d.ts",
+                      GraphStateSource.replace(/\nexport/g, "\ndeclare")
+                    );
+
+                    const api = project.createSourceFile("api.d.ts", APIDTS);
 
                     // const output = prog.emit();
 
                     return (
-                      ts.getPreEmitDiagnostics(prog)?.map((e) => {
+                      project.getPreEmitDiagnostics()?.map((e) => {
                         return {
                           severity: "error",
-                          message: JSON.stringify(e.messageText),
-                          from: e.start ?? 0,
-                          to: (e.start ?? 0) + (e.length ?? 0),
+                          message: JSON.stringify(e.getMessageText()),
+                          from: e.getStart() ?? 0,
+                          to: (e.getStart() ?? 0) + (e.getLength() ?? 0),
                         } satisfies Diagnostic;
                       }) ?? []
                     );

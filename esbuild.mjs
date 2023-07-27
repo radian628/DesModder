@@ -6,6 +6,7 @@ import { loadFile } from "./loaders/utils.mjs";
 import esbuild from "esbuild";
 import { copy } from "esbuild-plugin-copy";
 import { lessLoader } from "esbuild-plugin-less";
+import RawPlugin from "esbuild-plugin-raw";
 import { promises as fs } from "fs";
 import parseArgs from "minimist-lite";
 
@@ -52,6 +53,7 @@ const opts = {
     "src/script.ts",
     "src/preload/content.ts",
     "src/preload/script.ts",
+    "src/plugins/computed-expressions/sandbox-src.ts",
   ],
   // don't include source map on release builds
   sourcemap: watch ? "inline" : false,
@@ -65,6 +67,7 @@ const opts = {
     // The copy plugin *should* support array or glob "from", but I encountered
     //    error: Cannot read properties of undefined (reading 'slice')
     //    at setup (node_modules/esbuild-plugin-copy/dist/index.mjs:69:23)
+    RawPlugin(),
     copy({
       resolveFrom: "cwd",
       assets: {
