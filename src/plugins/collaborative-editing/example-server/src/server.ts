@@ -1,5 +1,6 @@
 // eslint-disable-next-line rulesdir/no-reach-past-exports
 import * as collabAPI from "../../api.js";
+// eslint-disable-next-line rulesdir/no-reach-past-exports
 import { GraphState } from "../../graphstate.js";
 import bodyParser from "body-parser";
 import express from "express";
@@ -19,15 +20,54 @@ app.use((req, res, next) => {
 
 app.use(bodyParser.json());
 
+interface CollabConnection {
+  ws: WebSocket;
+  displayName?: string;
+  lastUpdateTime: number;
+  alive: boolean;
+}
+
 interface CollabSession {
-  connections: WebSocket[];
+  connections: Map<WebSocket, CollabConnection>;
   password?: string;
   hostKey: string;
   id: string;
-  graphState?: GraphState;
+  graphState: GraphState;
+  lastUpdateTime: number;
 }
 
 const sessions = new Map<string, CollabSession>();
+
+const DELETE_SESSION_DELAY = 1000 * 60 * 60;
+
+setInterval(() => {
+  const now = Date.now();
+  const sessionsToRemove: string[] = [];
+
+  for (const [str, session] of sessions) {
+    if (now - session.lastUpdateTime >= DELETE_SESSION_DELAY) {
+      sessionsToRemove.push(str);
+    }
+  }
+
+  for (const s of sessionsToRemove) {
+    sessions.delete(s);
+  }
+}, DELETE_SESSION_DELAY);
+
+const PINGPONG_DELAY = 30000;
+
+setInterval(() => {
+  for (const [str, session] of sessions) {
+    for (const [ws, conn] of session.connections) {
+      if (!conn.alive) {
+        session.connections.delete(ws);
+      }
+      conn.alive = false;
+      ws.ping();
+    }
+  }
+}, PINGPONG_DELAY);
 
 app.post("/", (req, res) => {
   const pathname = req.url;
@@ -50,7 +90,29 @@ app.post("/", (req, res) => {
         id: sessionID,
         password: requestData.password,
         hostKey: requestData.hostKey,
-        connections: [],
+        connections: new Map(),
+        lastUpdateTime: Date.now(),
+        graphState: {
+          version: 9,
+          randomSeed: "25979e70e755924a9ac9f841c0482662",
+          graph: {
+            viewport: {
+              xmin: -10,
+              ymin: -9.541062801932368,
+              xmax: 10,
+              ymax: 9.541062801932368,
+            },
+          },
+          expressions: {
+            list: [
+              {
+                type: "expression",
+                id: "1",
+                color: "#c74440",
+              },
+            ],
+          },
+        },
       });
       res.end(
         JSON.stringify({
@@ -65,8 +127,12 @@ app.post("/", (req, res) => {
   res.status(400).end("");
 });
 
-function broadcast(sender: WebSocket, session: CollabSession, message: string) {
-  for (const ws of session.connections) {
+function broadcast(
+  sender: WebSocket | undefined,
+  session: CollabSession,
+  message: string
+) {
+  for (const { ws } of session.connections.values()) {
     if (ws !== sender) {
       ws.send(message);
     }
@@ -78,7 +144,13 @@ app.ws("/:id", (ws, req) => {
   const session = sessions.get(id);
   if (!session) return;
 
-  session.connections.push(ws);
+  const conn: CollabConnection = {
+    ws,
+    lastUpdateTime: Date.now(),
+    alive: true,
+  };
+
+  session.connections.set(ws, conn);
 
   if (session.graphState) {
     ws.send(
@@ -90,12 +162,19 @@ app.ws("/:id", (ws, req) => {
     );
   }
 
+  ws.on("pong", () => {
+    conn.alive = true;
+  });
+
   ws.on("message", (msg) => {
+    conn.alive = true;
+    session.lastUpdateTime = Date.now();
     const json = JSON.parse(msg.slice(0).toString());
     const maybeParsedMessage =
       collabAPI.CollaborativeEditingSessionMessageToServerParser.safeParse(
         json
       );
+
     if (!maybeParsedMessage.success) return;
 
     const parsedMessage = maybeParsedMessage.data;
@@ -116,6 +195,19 @@ app.ws("/:id", (ws, req) => {
         broadcast(ws, session, JSON.stringify(parsedMessage));
         break;
       case "PartialState":
+        break;
+      case "Join":
+        session.connections.get(ws).displayName = parsedMessage.displayName;
+        broadcast(
+          undefined,
+          session,
+          JSON.stringify({
+            type: "SessionInfo",
+            usersOnline: Array.from(session.connections.values()).map(
+              (conn) => conn.displayName
+            ),
+          })
+        );
         break;
     }
   });

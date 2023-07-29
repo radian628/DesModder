@@ -75,35 +75,14 @@ export function getDesyncedExpressionIDs(
 }
 
 export function deleteExpression(id: string) {
-  // console.log("does this trigger the error?");
-  // Calc.controller.dispatch({
-  //   type: "delete-item-and-animate-out",
-  //   id,
-  //   // @ts-expect-error flag to prevent loops
-  //   triggeredByCollab: true,
-  // });
   const model = Calc.controller.getItemModel(id);
   if (!model) return;
-  // console.log("removing", model.id, model);
   Calc.controller._removeExpressionSynchronously(model);
 }
 
-// export function addOrUpdateExpressionFromState(state: ItemState) {
-//   Calc.setExpression(state as Desmos.ExpressionState);
-//   const model = Calc.controller.getItemModel(state.id);
-//   const modelDefaultsForType = ModelDefaults[state.type];
-// }
-
 export function addExpressionFromState(state: ItemState, index: number) {
-  // console.log("adding state", state);
-  // let folderid = state.folderId;
-  // delete state.folderId;
-  // console.log("trying to add", state.id);
   const model = Calc.controller.createItemModel(state);
-  // console.log("added model", model, "state after", state);
   Calc.controller._toplevelInsertItemAt(index, model);
-  // console.log("set folderid", state.folderId);
-  // Calc.controller.getItemModelByIndex(index)?.folderId = folderid;
 }
 
 export function modifyExpressionFromState(state: ItemState, index: number) {

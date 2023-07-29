@@ -28,13 +28,23 @@ export const CollaborativeEditingSessionMessageToServerParser = z.union([
     type: z.literal("Close"),
     key: z.string(),
   }),
+  z.object({
+    type: z.literal("Join"),
+    displayName: z.string(),
+  }),
 ]);
+
+export const sessionInfoParser = z.object({
+  type: z.literal("SessionInfo"),
+  usersOnline: z.array(z.string()),
+});
 
 export const CollaborativeEditingSessionMessageToClientParser = z.union([
   CollaborativeEditingSessionMessageParser,
   z.object({
     type: z.literal("Close"),
   }),
+  sessionInfoParser,
 ]);
 
 export const CollaborativeEditingMessageToServerParser = z.object({

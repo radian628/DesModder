@@ -1,51 +1,87 @@
-var __assign = (this && this.__assign) || function () {
-    __assign = Object.assign || function(t) {
-        for (var s, i = 1, n = arguments.length; i < n; i++) {
-            s = arguments[i];
-            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
-                t[p] = s[p];
-        }
-        return t;
-    };
-    return __assign.apply(this, arguments);
-};
 // eslint-disable-next-line rulesdir/no-reach-past-exports
 import * as collabAPI from "../../api.js";
 import bodyParser from "body-parser";
 import express from "express";
 import expressWs from "express-ws";
 import * as uuid from "uuid";
-var app2 = express();
-var app = expressWs(app2).app;
-app.use(function (req, res, next) {
+const app2 = express();
+const app = expressWs(app2).app;
+app.use((req, res, next) => {
     res.setHeader("Access-Control-Allow-Origin", "*");
     res.setHeader("Access-Control-Allow-Headers", "Content-Type");
     next();
 });
 app.use(bodyParser.json());
-var sessions = new Map();
-app.post("/", function (req, res) {
-    var pathname = req.url;
+const sessions = new Map();
+const DELETE_SESSION_DELAY = 1000 * 60 * 60;
+setInterval(() => {
+    const now = Date.now();
+    const sessionsToRemove = [];
+    for (const [str, session] of sessions) {
+        if (now - session.lastUpdateTime >= DELETE_SESSION_DELAY) {
+            sessionsToRemove.push(str);
+        }
+    }
+    for (const s of sessionsToRemove) {
+        sessions.delete(s);
+    }
+}, DELETE_SESSION_DELAY);
+const PINGPONG_DELAY = 30000;
+setInterval(() => {
+    for (const [str, session] of sessions) {
+        for (const [ws, conn] of session.connections) {
+            if (!conn.alive) {
+                session.connections.delete(ws);
+            }
+            conn.alive = false;
+            ws.ping();
+        }
+    }
+}, PINGPONG_DELAY);
+app.post("/", (req, res) => {
+    const pathname = req.url;
     if (pathname === "/") {
         // eslint-disable-next-line @typescript-eslint/no-base-to-string
-        var msgJSON = req.body;
-        var parsed = collabAPI.CollaborativeEditingMessageToServerParser.safeParse(msgJSON);
+        const msgJSON = req.body;
+        const parsed = collabAPI.CollaborativeEditingMessageToServerParser.safeParse(msgJSON);
         if (!parsed.success) {
             res.status(400).end("");
             return;
         }
-        var requestData = parsed.data;
+        const requestData = parsed.data;
         if (requestData.type === "Host") {
-            var sessionID = uuid.v4();
+            const sessionID = uuid.v4();
             sessions.set(sessionID, {
                 id: sessionID,
                 password: requestData.password,
                 hostKey: requestData.hostKey,
-                connections: [],
+                connections: new Map(),
+                lastUpdateTime: Date.now(),
+                graphState: {
+                    version: 9,
+                    randomSeed: "25979e70e755924a9ac9f841c0482662",
+                    graph: {
+                        viewport: {
+                            xmin: -10,
+                            ymin: -9.541062801932368,
+                            xmax: 10,
+                            ymax: 9.541062801932368,
+                        },
+                    },
+                    expressions: {
+                        list: [
+                            {
+                                type: "expression",
+                                id: "1",
+                                color: "#c74440",
+                            },
+                        ],
+                    },
+                },
             });
             res.end(JSON.stringify({
                 type: "HostReply",
-                link: "ws://localhost:8080/".concat(sessionID),
+                link: `ws://localhost:8080/${sessionID}`,
             }));
             return;
         }
@@ -53,19 +89,23 @@ app.post("/", function (req, res) {
     res.status(400).end("");
 });
 function broadcast(sender, session, message) {
-    for (var _i = 0, _a = session.connections; _i < _a.length; _i++) {
-        var ws = _a[_i];
+    for (const { ws } of session.connections.values()) {
         if (ws !== sender) {
             ws.send(message);
         }
     }
 }
-app.ws("/:id", function (ws, req) {
-    var id = req.url.split("/")[1];
-    var session = sessions.get(id);
+app.ws("/:id", (ws, req) => {
+    const id = req.url.split("/")[1];
+    const session = sessions.get(id);
     if (!session)
         return;
-    session.connections.push(ws);
+    const conn = {
+        ws,
+        lastUpdateTime: Date.now(),
+        alive: true,
+    };
+    session.connections.set(ws, conn);
     if (session.graphState) {
         ws.send(JSON.stringify({
             type: "FullState",
@@ -73,23 +113,35 @@ app.ws("/:id", function (ws, req) {
             timestamp: Date.now(),
         }));
     }
-    ws.on("message", function (msg) {
-        var json = JSON.parse(msg.slice(0).toString());
-        var maybeParsedMessage = collabAPI.CollaborativeEditingSessionMessageToServerParser.safeParse(json);
+    ws.on("pong", () => {
+        conn.alive = true;
+    });
+    ws.on("message", (msg) => {
+        conn.alive = true;
+        session.lastUpdateTime = Date.now();
+        const json = JSON.parse(msg.slice(0).toString());
+        const maybeParsedMessage = collabAPI.CollaborativeEditingSessionMessageToServerParser.safeParse(json);
         if (!maybeParsedMessage.success)
             return;
-        var parsedMessage = maybeParsedMessage.data;
+        const parsedMessage = maybeParsedMessage.data;
         switch (parsedMessage.type) {
             case "Close":
                 if (parsedMessage.key !== session.hostKey)
                     break;
-                broadcast(ws, session, JSON.stringify(__assign(__assign({}, parsedMessage), { key: undefined })));
+                broadcast(ws, session, JSON.stringify(Object.assign(Object.assign({}, parsedMessage), { key: undefined })));
                 break;
             case "FullState":
                 session.graphState = parsedMessage.state;
                 broadcast(ws, session, JSON.stringify(parsedMessage));
                 break;
             case "PartialState":
+                break;
+            case "Join":
+                session.connections.get(ws).displayName = parsedMessage.displayName;
+                broadcast(undefined, session, JSON.stringify({
+                    type: "SessionInfo",
+                    usersOnline: Array.from(session.connections.values()).map((conn) => conn.displayName),
+                }));
                 break;
         }
     });

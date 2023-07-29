@@ -1,22 +1,22 @@
 import { z } from "zod";
-export var baseItemStateParser = z.object({
+export const baseItemStateParser = z.object({
     id: z.string(),
     secret: z.boolean().optional(),
 });
-export var baseNonFolderStateParser = z.intersection(baseItemStateParser, z.object({
+export const baseNonFolderStateParser = z.intersection(baseItemStateParser, z.object({
     folderId: z.string().optional(),
 }));
-export var lineStyleParser = z.union([z.literal("SOLID"), z.literal("DASHED"), z.literal("DOTTED")], {});
-export var pointStyleParser = z.union([z.literal("POINT"), z.literal("OPEN"), z.literal("CROSS")], {});
-export var dragModeParser = z.union([
+export const lineStyleParser = z.union([z.literal("SOLID"), z.literal("DASHED"), z.literal("DOTTED")], {});
+export const pointStyleParser = z.union([z.literal("POINT"), z.literal("OPEN"), z.literal("CROSS")], {});
+export const dragModeParser = z.union([
     z.literal("NONE"),
     z.literal("X"),
     z.literal("Y"),
     z.literal("XY"),
     z.literal("AUTO"),
 ], {});
-export var labelSizeParser = z.union([z.literal("SMALL"), z.literal("MEDIUM"), z.literal("LARGE"), z.string()], {});
-export var labelOrientationParser = z.union([
+export const labelSizeParser = z.union([z.literal("SMALL"), z.literal("MEDIUM"), z.literal("LARGE"), z.string()], {});
+export const labelOrientationParser = z.union([
     z.literal("default"),
     z.literal("center"),
     z.literal("center_auto"),
@@ -34,16 +34,16 @@ export var labelOrientationParser = z.union([
     z.literal("right"),
     z.literal("auto_right"),
 ], {});
-export var domainParser = z.object({
+export const domainParser = z.object({
     min: z.string(),
     max: z.string(),
 });
-export var baseClickableParser = z.object({
+export const baseClickableParser = z.object({
     enabled: z.boolean().optional(),
     description: z.string().optional(),
     latex: z.string().optional(),
 });
-export var expressionStateWithoutColumnParser = z.object({
+export const expressionStateWithoutColumnParser = z.object({
     type: z.literal("expression"),
     id: z.string(),
     showLabel: z.boolean().optional(),
@@ -113,7 +113,7 @@ export var expressionStateWithoutColumnParser = z.object({
         .optional(),
     clickableInfo: baseClickableParser.optional(),
 });
-export var columnExpressionSharedParser = z.object({
+export const columnExpressionSharedParser = z.object({
     color: z.string(),
     latex: z.string().optional(),
     hidden: z.boolean().optional(),
@@ -128,8 +128,8 @@ export var columnExpressionSharedParser = z.object({
     pointSize: z.string().optional(),
     pointOpacity: z.string().optional(),
 });
-export var expressionStateParser = expressionStateWithoutColumnParser.merge(columnExpressionSharedParser);
-export var imageStateParser = z.object({
+export const expressionStateParser = expressionStateWithoutColumnParser.merge(columnExpressionSharedParser);
+export const imageStateParser = z.object({
     type: z.literal("image"),
     id: z.string(),
     image_url: z.string(),
@@ -147,26 +147,26 @@ export var imageStateParser = z.object({
         depressedImage: z.string().optional(),
     })),
 });
-export var tableColumnParser = z.intersection(z.object({
+export const tableColumnParser = z.intersection(z.object({
     id: z.string(),
     values: z.array(z.string()),
 }), columnExpressionSharedParser);
-export var tableStateParser = z.intersection(baseNonFolderStateParser, z.object({
+export const tableStateParser = z.intersection(baseNonFolderStateParser, z.object({
     type: z.literal("table"),
     columns: z.array(tableColumnParser),
 }));
-export var folderStateParser = z.intersection(baseItemStateParser, z.object({
+export const folderStateParser = z.intersection(baseItemStateParser, z.object({
     type: z.literal("folder"),
     hidden: z.boolean().optional(),
     collapsed: z.boolean().optional(),
     title: z.string().optional(),
 }));
-export var textStateParser = z.intersection(baseNonFolderStateParser, z.object({
+export const textStateParser = z.intersection(baseNonFolderStateParser, z.object({
     type: z.literal("text"),
     text: z.string().optional(),
 }));
-export var arrowModeParser = z.union([z.literal("NONE"), z.literal("POSITIVE"), z.literal("BOTH")], {});
-export var GrapherStateParser = z
+export const arrowModeParser = z.union([z.literal("NONE"), z.literal("POSITIVE"), z.literal("BOTH")], {});
+export const GrapherStateParser = z
     .object({
     viewport: z
         .object({
@@ -197,20 +197,20 @@ export var GrapherStateParser = z
     userLockedViewport: z.boolean().optional(),
 })
     .strict();
-export var nonFolderStateParser = z.intersection(z.union([
+export const nonFolderStateParser = z.intersection(z.union([
     expressionStateParser,
     imageStateParser,
     tableStateParser,
     textStateParser,
 ]), baseNonFolderStateParser);
-export var tickerParser = z.object({
+export const tickerParser = z.object({
     handlerLatex: z.string().optional(),
     minStepLatex: z.string().optional(),
     open: z.boolean().optional(),
     playing: z.boolean().optional(),
 });
-export var itemStateParser = z.union([nonFolderStateParser, folderStateParser], {});
-export var GraphStateParser = z.object({
+export const itemStateParser = z.union([nonFolderStateParser, folderStateParser], {});
+export const GraphStateParser = z.object({
     version: z.literal(10),
     randomSeed: z.string().optional(),
     graph: GrapherStateParser,

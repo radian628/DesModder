@@ -1,4 +1,7 @@
-import { CollaborativeEditingSessionMessageToClientParser } from "./api";
+import {
+  CollaborativeEditingSessionMessageToClientParser,
+  sessionInfoParser,
+} from "./api";
 import { ItemState } from "./graphstate";
 import {
   addExpressionFromState,
@@ -6,6 +9,7 @@ import {
   getDesyncedExpressionIDs,
   modifyExpressionFromState,
 } from "./util";
+import View from "./view";
 import { jsx } from "DCGView";
 import { Calc } from "globals/window";
 import { PluginController } from "plugins/PluginController";
@@ -13,53 +17,41 @@ import { z } from "zod";
 
 interface Config {
   hostLink: string;
+  displayName: string;
 }
 
 export default class CollaborativeEditing extends PluginController<Config> {
   static config = [
     {
-      type: "string" as const,
-      variant: "text" as const,
+      type: "string",
+      variant: "text",
       default: "",
       key: "hostLink",
     },
-  ];
+    {
+      type: "string",
+      variant: "text",
+      default: "User",
+      key: "displayName",
+    },
+  ] as const;
 
   static id = "collaborative-editing";
 
   static enabledByDefault = false;
+
+  graphstateLoaded = false;
+
+  isCollabEnabled = false;
+
+  sessionInfo?: z.infer<typeof sessionInfoParser>;
 
   afterEnable(): void {
     this.dsm.pillboxMenus?.addPillboxButton({
       id: "dsm-collab-menu",
       tooltip: "collab-menu",
       iconClass: "dcg-icon-share",
-      popup: () => (
-        <div class="dcg-popover-interior">
-          <button
-            onClick={async () => {
-              const result = await (
-                await fetch(this.settings.hostLink, {
-                  body: JSON.stringify({
-                    type: "Host",
-                    hostKey: "your mom lol",
-                  }),
-                  headers: { "Content-Type": "application/json" },
-                  method: "POST",
-                })
-              ).json();
-
-              if (result.link) {
-                window.location.search = `?collab=${encodeURIComponent(
-                  result.link
-                )}`;
-              }
-            }}
-          >
-            Host
-          </button>
-        </div>
-      ),
+      popup: () => <View plugin={this}></View>,
     });
 
     const search = new URLSearchParams(window.location.search);
@@ -68,14 +60,44 @@ export default class CollaborativeEditing extends PluginController<Config> {
 
     if (!collab) return;
 
+    this.isCollabEnabled = true;
+
     const ws = new WebSocket(collab);
+
+    ws.addEventListener("error", (e) => {
+      Calc.controller._showToast({
+        message: "Error encountered during connection!",
+        hideAfter: -1,
+      });
+    });
+
+    ws.addEventListener("close", () => {
+      Calc.controller._showToast({
+        message:
+          "You have lost connection with the server. Assuming you are connected to the internet and the server is still running, refresh the page to rejoin.",
+        hideAfter: -1,
+      });
+    });
+
+    ws.addEventListener("open", () => {
+      ws.send(
+        JSON.stringify({
+          type: "Join",
+          displayName: this.settings.displayName,
+        })
+      );
+    });
 
     ws.addEventListener("message", (event) => {
       const evt = JSON.parse(event.data) as z.infer<
         typeof CollaborativeEditingSessionMessageToClientParser
       >;
 
-      if (evt.type === "FullState") {
+      if (evt.type === "SessionInfo") {
+        this.sessionInfo = evt;
+      } else if (evt.type === "FullState") {
+        this.graphstateLoaded = true;
+        console.log("fullstate event");
         const remoteList = evt.state.expressions.list;
         const myList = Calc.getState().expressions.list;
         const mapByIdRemote = new Map(
@@ -162,6 +184,7 @@ export default class CollaborativeEditing extends PluginController<Config> {
     });
 
     Calc.controller.dispatcher.register((e) => {
+      if (!this.graphstateLoaded) return;
       // @ts-expect-error custom flag to prevent loops
       if (e.triggeredByCollab) return;
       if (

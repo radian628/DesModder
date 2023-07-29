@@ -1,6 +1,6 @@
 import { GrapherStateParser, itemStateParser, tickerParser, } from "./graphstate.js";
 import * as z from "zod";
-var CollaborativeEditingSessionMessageParser = z.union([
+const CollaborativeEditingSessionMessageParser = z.union([
     z
         .object({
         type: z.literal("FullState"),
@@ -15,25 +15,34 @@ var CollaborativeEditingSessionMessageParser = z.union([
         ticker: z.optional(tickerParser),
     }),
 ]);
-export var CollaborativeEditingSessionMessageToServerParser = z.union([
+export const CollaborativeEditingSessionMessageToServerParser = z.union([
     CollaborativeEditingSessionMessageParser,
     z.object({
         type: z.literal("Close"),
         key: z.string(),
     }),
+    z.object({
+        type: z.literal("Join"),
+        displayName: z.string(),
+    }),
 ]);
-export var CollaborativeEditingSessionMessageToClientParser = z.union([
+export const sessionInfoParser = z.object({
+    type: z.literal("SessionInfo"),
+    usersOnline: z.array(z.string()),
+});
+export const CollaborativeEditingSessionMessageToClientParser = z.union([
     CollaborativeEditingSessionMessageParser,
     z.object({
         type: z.literal("Close"),
     }),
+    sessionInfoParser,
 ]);
-export var CollaborativeEditingMessageToServerParser = z.object({
+export const CollaborativeEditingMessageToServerParser = z.object({
     type: z.literal("Host"),
     password: z.optional(z.string()),
     hostKey: z.string(),
 });
-export var CollaborativeEditingMessageToClientParser = z.object({
+export const CollaborativeEditingMessageToClientParser = z.object({
     type: z.literal("HostReply"),
     link: z.string(),
 });

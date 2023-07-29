@@ -3,7 +3,8 @@
     "outDir": "./dst",
     "esModuleInterop": true,
     "module": "ESNext",
-    "moduleResolution": "node"
+    "moduleResolution": "node",
+    "target": "ES2015"
   },
   "include": ["src/**/*"]
 }
