@@ -75,8 +75,6 @@ export default class CollaborativeEditing extends PluginController<Config> {
         typeof CollaborativeEditingSessionMessageToClientParser
       >;
 
-      console.log("Received Event", evt);
-
       if (evt.type === "FullState") {
         const remoteList = evt.state.expressions.list;
         const myList = Calc.getState().expressions.list;
@@ -89,10 +87,56 @@ export default class CollaborativeEditing extends PluginController<Config> {
           remoteList
         );
 
-        console.log(" stuff to remove", removed);
+        const alreadyBeingModified = new Set([
+          ...added,
+          ...changed,
+          ...removed,
+        ]);
+
+        if (remoteList.length === myList.length) {
+          for (let i = 0; i < remoteList.length; i++) {
+            if (alreadyBeingModified.has(remoteList[i].id)) continue;
+
+            if (Calc.controller.getItemModel(remoteList[i].id)?.index !== i) {
+              console.log(remoteList[i].id, "switched places");
+              changed.push(remoteList[i].id);
+            }
+          }
+        }
 
         for (const r of removed) {
           deleteExpression(r);
+        }
+
+        const changedFolderIds = new Set<string>();
+
+        for (const id of [...changed, ...added]) {
+          const state = mapByIdRemote.get(id).state;
+          if (state.type === "folder") {
+            changedFolderIds.add(id);
+          }
+        }
+
+        for (const state of myList) {
+          if (changedFolderIds.has(state.folderId)) {
+            changed.push(state.id);
+          }
+        }
+
+        console.log("added", added);
+        console.log("changed", changed);
+        console.log("removed", removed);
+
+        for (const c of changed) {
+          const state = mapByIdRemote.get(c);
+          if (!state || state.state.type !== "folder") continue;
+          modifyExpressionFromState(state.state, state.index);
+        }
+
+        for (const c of changed) {
+          const state = mapByIdRemote.get(c);
+          if (!state || state.state.type === "folder") continue;
+          modifyExpressionFromState(state.state, state.index);
         }
 
         for (const a of added) {
@@ -101,11 +145,12 @@ export default class CollaborativeEditing extends PluginController<Config> {
           addExpressionFromState(state.state, state.index);
         }
 
-        for (const c of changed) {
-          const state = mapByIdRemote.get(c);
-          if (!state) continue;
-          modifyExpressionFromState(state.state, state.index);
-        }
+        Calc.controller.updateTheComputedWorld();
+
+        Calc.controller.dispatch({
+          type: "tick",
+          triggeredByCollab: true,
+        });
 
         Calc.controller.updateTheComputedWorld();
 
@@ -129,6 +174,7 @@ export default class CollaborativeEditing extends PluginController<Config> {
           JSON.stringify({
             type: "FullState",
             state: Calc.getState(),
+            timestamp: Date.now(),
           })
         );
       }

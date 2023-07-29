@@ -10,7 +10,8 @@ const CollaborativeEditingSessionMessageParser = z.union([
   z
     .object({
       type: z.literal("FullState"),
-      state: z.any(), // GraphStateParser.passthrough(),
+      state: z.any(), // graphstate, future-proofed
+      timestamp: z.number(),
     })
     .passthrough(),
   z.object({

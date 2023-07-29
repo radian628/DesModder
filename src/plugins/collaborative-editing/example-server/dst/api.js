@@ -4,7 +4,8 @@ var CollaborativeEditingSessionMessageParser = z.union([
     z
         .object({
         type: z.literal("FullState"),
-        state: z.any(), // GraphStateParser.passthrough(),
+        state: z.any(),
+        timestamp: z.number(),
     })
         .passthrough(),
     z.object({

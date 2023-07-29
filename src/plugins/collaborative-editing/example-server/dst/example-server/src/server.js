@@ -66,6 +66,13 @@ app.ws("/:id", function (ws, req) {
     if (!session)
         return;
     session.connections.push(ws);
+    if (session.graphState) {
+        ws.send(JSON.stringify({
+            type: "FullState",
+            state: session.graphState,
+            timestamp: Date.now(),
+        }));
+    }
     ws.on("message", function (msg) {
         var json = JSON.parse(msg.slice(0).toString());
         var maybeParsedMessage = collabAPI.CollaborativeEditingSessionMessageToServerParser.safeParse(json);
@@ -79,8 +86,10 @@ app.ws("/:id", function (ws, req) {
                 broadcast(ws, session, JSON.stringify(__assign(__assign({}, parsedMessage), { key: undefined })));
                 break;
             case "FullState":
-            case "PartialState":
+                session.graphState = parsedMessage.state;
                 broadcast(ws, session, JSON.stringify(parsedMessage));
+                break;
+            case "PartialState":
                 break;
         }
     });

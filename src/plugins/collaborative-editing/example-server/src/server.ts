@@ -1,5 +1,6 @@
 // eslint-disable-next-line rulesdir/no-reach-past-exports
 import * as collabAPI from "../../api.js";
+import { GraphState } from "../../graphstate.js";
 import bodyParser from "body-parser";
 import express from "express";
 import expressWs from "express-ws";
@@ -23,6 +24,7 @@ interface CollabSession {
   password?: string;
   hostKey: string;
   id: string;
+  graphState?: GraphState;
 }
 
 const sessions = new Map<string, CollabSession>();
@@ -78,6 +80,16 @@ app.ws("/:id", (ws, req) => {
 
   session.connections.push(ws);
 
+  if (session.graphState) {
+    ws.send(
+      JSON.stringify({
+        type: "FullState",
+        state: session.graphState,
+        timestamp: Date.now(),
+      })
+    );
+  }
+
   ws.on("message", (msg) => {
     const json = JSON.parse(msg.slice(0).toString());
     const maybeParsedMessage =
@@ -100,8 +112,10 @@ app.ws("/:id", (ws, req) => {
         );
         break;
       case "FullState":
-      case "PartialState":
+        session.graphState = parsedMessage.state as GraphState;
         broadcast(ws, session, JSON.stringify(parsedMessage));
+        break;
+      case "PartialState":
         break;
     }
   });

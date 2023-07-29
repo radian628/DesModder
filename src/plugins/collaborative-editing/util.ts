@@ -98,7 +98,7 @@ export function addExpressionFromState(state: ItemState, index: number) {
   // console.log("adding state", state);
   // let folderid = state.folderId;
   // delete state.folderId;
-  console.log("trying to add", state.id);
+  // console.log("trying to add", state.id);
   const model = Calc.controller.createItemModel(state);
   // console.log("added model", model, "state after", state);
   Calc.controller._toplevelInsertItemAt(index, model);
