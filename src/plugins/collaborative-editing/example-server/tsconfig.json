@@ -1,0 +1,9 @@
+{
+  "compilerOptions": {
+    "outDir": "./dst",
+    "esModuleInterop": true,
+    "module": "ESNext",
+    "moduleResolution": "node"
+  },
+  "include": ["src/**/*"]
+}

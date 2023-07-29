@@ -246,3 +246,9 @@ custom-mathquill-config-opt-leftIntoSubscript-name = Left/Right into Subscripts
 custom-mathquill-config-opt-leftIntoSubscript-desc = Moving the cursor left or right will go into subscript instead of superscript
 custom-mathquill-config-opt-extendedGreek-name = More Greek Letters
 custom-mathquill-config-opt-extendedGreek-desc = Enables replacements for all supported greek letters
+
+## Collaborative Editing
+collaborative-editing-name = Collaborative Editing
+collaborative-editing-desc = Work with others on a graph at the same time!
+collaborative-editing-opt-hostLink-name = Host Link
+collaborative-editing-opt-hostLink-desc = Server to use if you are hosting a collaborative session. Can be safely ignored if you are not hosting.

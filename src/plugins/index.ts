@@ -2,6 +2,7 @@
 import GLesmos from "./GLesmos";
 import BetterEvaluationView from "./better-evaluation-view";
 import BuiltinSettings from "./builtin-settings";
+import CollaborativeEditing from "./collaborative-editing";
 import CompactView from "./compact-view";
 import CustomMathQuillConfig from "./custom-mathquill-config";
 import DebugMode from "./debug-mode";
@@ -123,6 +124,7 @@ export const keyToPlugin = {
   intellisense: Intellisense,
   compactView: CompactView,
   exprActionButtons: ExprActionButtons,
+  collaborativeEditing: CollaborativeEditing,
 } satisfies Record<string, Plugin<any>>;
 
 export const pluginList = Object.values(keyToPlugin);
@@ -175,6 +177,7 @@ export class TransparentPlugins implements KeyToPluginInstance {
   get compactView () { return this.ep["compact-view"]; }
   get multiline () { return this.ep["multiline"]; }
   get exprActionButtons () { return this.ep["expr-action-buttons"]; }
+  get collaborativeEditing () { return this.ep["collaborative-editing"]; } 
 }
 
 export type IDToPluginSettings = {

@@ -42,6 +42,7 @@ const categoryPlugins: Record<string, PluginID[]> = {
     "shift-enter-newline",
     "folder-tools",
     "custom-mathquill-config",
+    "collaborative-editing",
   ],
   visual: [
     "set-primary-color",

@@ -25,7 +25,10 @@ export type DispatchedEvent =
         | "redo"
         | "tick-ticker"
         | "keypad/functions"
-        | "ui/container-resized";
+        | "ui/container-resized"
+        | "set-expression-properties-from-api"
+        | "finish-deleting-item-after-animation"
+        | "image-load-success";
     }
   | {
       type: "keypad/set-minimized";
