@@ -1,7 +1,7 @@
 // eslint-disable-next-line rulesdir/no-reach-past-exports
-import * as collabAPI from "../../api.js";
+import * as collabAPI from "../../src/plugins/collaborative-editing/api.js";
 // eslint-disable-next-line rulesdir/no-reach-past-exports
-import { GraphState } from "../../graphstate.js";
+import { GraphState } from "../../src/plugins/collaborative-editing/graphstate.js";
 import bodyParser from "body-parser";
 import express from "express";
 import expressWs from "express-ws";
@@ -195,6 +195,7 @@ app.ws("/:id", (ws, req) => {
         broadcast(ws, session, JSON.stringify(parsedMessage));
         break;
       case "PartialState":
+        broadcast(ws, session, JSON.stringify(parsedMessage));
         break;
       case "Join":
         session.connections.get(ws).displayName = parsedMessage.displayName;

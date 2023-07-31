@@ -2,6 +2,7 @@ import {
   CollaborativeEditingSessionMessageToClientParser,
   sessionInfoParser,
 } from "./api";
+import { CollabIO } from "./collab-io";
 import { ItemState } from "./graphstate";
 import {
   addExpressionFromState,
@@ -46,6 +47,8 @@ export default class CollaborativeEditing extends PluginController<Config> {
 
   sessionInfo?: z.infer<typeof sessionInfoParser>;
 
+  io!: CollabIO;
+
   afterEnable(): void {
     this.dsm.pillboxMenus?.addPillboxButton({
       id: "dsm-collab-menu",
@@ -60,39 +63,11 @@ export default class CollaborativeEditing extends PluginController<Config> {
 
     if (!collab) return;
 
+    this.io = new CollabIO(collab, this);
+
     this.isCollabEnabled = true;
 
-    const ws = new WebSocket(collab);
-
-    ws.addEventListener("error", (e) => {
-      Calc.controller._showToast({
-        message: "Error encountered during connection!",
-        hideAfter: -1,
-      });
-    });
-
-    ws.addEventListener("close", () => {
-      Calc.controller._showToast({
-        message:
-          "You have lost connection with the server. Assuming you are connected to the internet and the server is still running, refresh the page to rejoin.",
-        hideAfter: -1,
-      });
-    });
-
-    ws.addEventListener("open", () => {
-      ws.send(
-        JSON.stringify({
-          type: "Join",
-          displayName: this.settings.displayName,
-        })
-      );
-    });
-
-    ws.addEventListener("message", (event) => {
-      const evt = JSON.parse(event.data) as z.infer<
-        typeof CollaborativeEditingSessionMessageToClientParser
-      >;
-
+    this.io.onReceive((evt) => {
       if (evt.type === "SessionInfo") {
         this.sessionInfo = evt;
       } else if (evt.type === "FullState") {
@@ -193,13 +168,11 @@ export default class CollaborativeEditing extends PluginController<Config> {
         e.type !== "tick" &&
         e.type !== "image-load-success"
       ) {
-        ws.send(
-          JSON.stringify({
-            type: "FullState",
-            state: Calc.getState(),
-            timestamp: Date.now(),
-          })
-        );
+        this.io.sendFullState({
+          type: "FullState",
+          state: Calc.getState(),
+          timestamp: Date.now(),
+        });
       }
     });
   }

@@ -6,20 +6,31 @@ import {
 } from "./graphstate.js";
 import * as z from "zod";
 
-const CollaborativeEditingSessionMessageParser = z.union([
-  z
-    .object({
-      type: z.literal("FullState"),
-      state: z.any(), // graphstate, future-proofed
-      timestamp: z.number(),
+export const FullStateMessageParser = z
+  .object({
+    type: z.literal("FullState"),
+    state: z.any(), // graphstate, future-proofed
+    timestamp: z.number(),
+  })
+  .passthrough();
+
+export const PartialStateMessageParser = z.object({
+  type: z.literal("PartialState"),
+  itemsAddedOrChanged: z.array(
+    z.object({
+      after: z.optional(z.string()), // needed to handle state reordering
+      add: z.any(), // itemstate
     })
-    .passthrough(),
-  z.object({
-    type: z.literal("PartialState"),
-    items: z.array(itemStateParser),
-    settings: z.optional(GrapherStateParser),
-    ticker: z.optional(tickerParser),
-  }),
+  ),
+  itemsRemoved: z.array(z.string()),
+  order: z.array(z.string()),
+  settings: z.optional(GrapherStateParser),
+  ticker: z.optional(tickerParser),
+});
+
+const CollaborativeEditingSessionMessageParser = z.union([
+  FullStateMessageParser,
+  PartialStateMessageParser,
 ]);
 
 export const CollaborativeEditingSessionMessageToServerParser = z.union([
