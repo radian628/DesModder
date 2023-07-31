@@ -7,47 +7,6 @@ export interface ListDiff<T, Key> {
   order: Key[];
 }
 
-// https://en.wikipedia.org/wiki/Longest_increasing_subsequence
-export function longestIncreasingSubsequenceIndices<T>(
-  list: T[],
-  cmp: (a: T, b: T) => number
-) {
-  const p: number[] = [];
-  const m = [-1];
-
-  let l = 0;
-  for (let i = 0; i < list.length; i++) {
-    let lo = 1;
-    let hi = l + 1;
-    while (lo < hi) {
-      const mid = lo + Math.floor((hi - lo) / 2);
-      if (list[m[mid]] >= list[i]) {
-        hi = mid;
-      } else {
-        lo = mid + 1;
-      }
-    }
-
-    const newL = lo;
-
-    p[i] = m[newL - 1];
-    m[newL] = i;
-
-    if (newL > l) {
-      l = newL;
-    }
-  }
-
-  const s = [];
-  let k = m[l];
-  for (let i = l - 1; i >= 0; i--) {
-    s.push(k);
-    k = p[k];
-  }
-
-  return s;
-}
-
 export function generateListDiff<T, Key>(
   oldList: T[],
   newList: T[],
