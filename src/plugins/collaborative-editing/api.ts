@@ -1,32 +1,60 @@
-import {
-  GraphStateParser,
-  GrapherStateParser,
-  itemStateParser,
-  tickerParser,
-} from "./graphstate.js";
 import * as z from "zod";
+
+export const FutureProofItemStateParser = z
+  .object({
+    id: z.string(),
+  })
+  .passthrough();
+export type FutureProofItemState = z.infer<typeof FutureProofItemStateParser>;
+
+export const GraphStateChangeParser = z.union([
+  z
+    .object({
+      type: z.literal("AddItem"),
+      state: FutureProofItemStateParser,
+      after: z.number().optional(),
+      order: z.array(z.string()),
+    })
+    .refine(
+      (obj) =>
+        // case where expression is inserted at beginning
+        obj.after === undefined || // array bounds check
+        (obj.after < obj.order.length &&
+          obj.after >= 0 &&
+          // integer check
+          Math.floor(obj.after) === obj.after)
+    ),
+  z.object({
+    type: z.literal("RemoveItem"),
+    id: z.string(),
+  }),
+]);
+export type GraphStateChange = z.infer<typeof GraphStateChangeParser>;
+
+export const FutureProofGraphStateParser = z
+  .object({
+    expressions: z
+      .object({
+        list: z.array(FutureProofItemStateParser),
+      })
+      .passthrough(),
+  })
+  .passthrough();
+export type FutureProofGraphState = z.infer<typeof FutureProofGraphStateParser>;
 
 export const FullStateMessageParser = z
   .object({
     type: z.literal("FullState"),
-    state: z.any(), // graphstate, future-proofed
+    state: FutureProofGraphStateParser, // graphstate, future-proofed
     timestamp: z.number(),
   })
   .passthrough();
 
 export const PartialStateMessageParser = z.object({
   type: z.literal("PartialState"),
-  itemsAddedOrChanged: z.array(
-    z.object({
-      after: z.optional(z.string()), // needed to handle state reordering
-      add: z.any(), // itemstate
-    })
-  ),
-  itemsRemoved: z.array(z.string()),
-  order: z.array(z.string()),
-  settings: z.optional(GrapherStateParser),
-  ticker: z.optional(tickerParser),
+  items: z.array(GraphStateChangeParser),
 });
+export type PartialMessageParser = z.infer<typeof PartialStateMessageParser>;
 
 const CollaborativeEditingSessionMessageParser = z.union([
   FullStateMessageParser,

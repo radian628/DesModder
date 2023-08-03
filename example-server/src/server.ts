@@ -20,6 +20,48 @@ app.use((req, res, next) => {
 
 app.use(bodyParser.json());
 
+function applyItemStateDiff(
+  items: collabAPI.FutureProofItemState[],
+  diff: collabAPI.GraphStateChange[]
+) {
+  for (const diffItem of diff) {
+    const idToIndexMap = new Map(items.map((e, i) => [e.id, i]));
+
+    if (diffItem.type === "AddItem") {
+      let index: number | undefined;
+      let indexIntoOrder = diffItem.after;
+
+      while (index === undefined) {
+        if (indexIntoOrder === undefined || indexIntoOrder < 0) {
+          index = -1;
+          break;
+        }
+        index = idToIndexMap.get(diffItem.order[indexIntoOrder]);
+        indexIntoOrder--;
+      }
+
+      items.splice(index + 1, 0, diffItem.state);
+    } else if (diffItem.type === "RemoveItem") {
+      const idx = idToIndexMap.get(diffItem.id);
+
+      if (idx === undefined) continue;
+
+      items.splice(idx, 1);
+    }
+  }
+
+  // deduplicate expressions (this may be the source of the bug)
+  const idSet = new Set<string>();
+  for (let i = 0; i < items.length; i++) {
+    const id = items[i].id;
+    if (idSet.has(id)) {
+      items.splice(i, 1);
+      i--;
+    }
+    idSet.add(id);
+  }
+}
+
 interface CollabConnection {
   ws: WebSocket;
   displayName?: string;
@@ -32,8 +74,9 @@ interface CollabSession {
   password?: string;
   hostKey: string;
   id: string;
-  graphState: GraphState;
+  graphState: collabAPI.FutureProofGraphState;
   lastUpdateTime: number;
+  areAllClientsUpToDate: boolean;
 }
 
 const sessions = new Map<string, CollabSession>();
@@ -86,7 +129,8 @@ app.post("/", (req, res) => {
 
     if (requestData.type === "Host") {
       const sessionID = uuid.v4();
-      sessions.set(sessionID, {
+      const session = {
+        areAllClientsUpToDate: false,
         id: sessionID,
         password: requestData.password,
         hostKey: requestData.hostKey,
@@ -113,7 +157,24 @@ app.post("/", (req, res) => {
             ],
           },
         },
-      });
+      };
+
+      setInterval(() => {
+        if (!session.areAllClientsUpToDate) {
+          broadcast(
+            undefined,
+            session,
+            JSON.stringify({
+              type: "FullState",
+              state: session.graphState,
+              timestamp: Date.now(),
+            })
+          );
+          session.areAllClientsUpToDate = true;
+        }
+      }, 250);
+
+      sessions.set(sessionID, session);
       res.end(
         JSON.stringify({
           type: "HostReply",
@@ -175,6 +236,8 @@ app.ws("/:id", (ws, req) => {
         json
       );
 
+    console.log("maybeparsedmessage", maybeParsedMessage);
+
     if (!maybeParsedMessage.success) return;
 
     const parsedMessage = maybeParsedMessage.data;
@@ -191,11 +254,17 @@ app.ws("/:id", (ws, req) => {
         );
         break;
       case "FullState":
-        session.graphState = parsedMessage.state as GraphState;
+        session.graphState =
+          parsedMessage.state as unknown as collabAPI.FutureProofGraphState;
         broadcast(ws, session, JSON.stringify(parsedMessage));
+        session.areAllClientsUpToDate = false;
         break;
       case "PartialState":
-        broadcast(ws, session, JSON.stringify(parsedMessage));
+        applyItemStateDiff(
+          session.graphState.expressions.list,
+          parsedMessage.items
+        );
+        session.areAllClientsUpToDate = false;
         break;
       case "Join":
         session.connections.get(ws).displayName = parsedMessage.displayName;
@@ -209,6 +278,7 @@ app.ws("/:id", (ws, req) => {
             ),
           })
         );
+        session.areAllClientsUpToDate = false;
         break;
     }
   });

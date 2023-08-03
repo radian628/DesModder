@@ -81,6 +81,8 @@ export function deleteExpression(id: string) {
 }
 
 export function addExpressionFromState(state: ItemState, index: number) {
+  const oldModel = Calc.controller.getItemModel(state.id);
+  if (oldModel) Calc.controller._removeExpressionSynchronously(oldModel);
   const model = Calc.controller.createItemModel(state);
   Calc.controller._toplevelInsertItemAt(index, model);
 }

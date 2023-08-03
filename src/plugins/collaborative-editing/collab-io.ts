@@ -14,24 +14,24 @@ export type ReceiveHandler = (
   s: z.infer<typeof CollaborativeEditingSessionMessageToClientParser>
 ) => void;
 
-export function getPartialStateMessage(
-  oldState: GraphState,
-  newState: GraphState
-): z.infer<typeof PartialStateMessageParser> {
-  const { added, removed, order } = generateListDiff(
-    oldState.expressions.list,
-    newState.expressions.list,
-    (t) => t.id,
-    (a, b) => itemStateEq(a, b)
-  );
+// export function getPartialStateMessage(
+//   oldState: GraphState,
+//   newState: GraphState
+// ): z.infer<typeof PartialStateMessageParser> {
+//   const { added, removed, order } = generateListDiff(
+//     oldState.expressions.list,
+//     newState.expressions.list,
+//     (t) => t.id,
+//     (a, b) => itemStateEq(a, b)
+//   );
 
-  return {
-    type: "PartialState",
-    itemsAddedOrChanged: added,
-    itemsRemoved: removed,
-    order,
-  };
-}
+//   return {
+//     type: "PartialState",
+//     itemsAddedOrChanged: added,
+//     itemsRemoved: removed,
+//     order,
+//   };
+// }
 
 export class CollabIO {
   ws: WebSocket;
