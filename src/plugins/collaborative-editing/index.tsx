@@ -4,6 +4,7 @@ import {
 } from "./api";
 import { DiffMaker, applyDiffItem } from "./collab";
 import { CollabIO } from "./collab-io";
+import { getObjectDiff } from "./diff";
 import { ItemState } from "./graphstate";
 import {
   addExpressionFromState,
@@ -54,6 +55,8 @@ export default class CollaborativeEditing extends PluginController<Config> {
 
   hasPendingChanges = false;
 
+  isDragDropping = false;
+
   afterEnable(): void {
     this.dsm.pillboxMenus?.addPillboxButton({
       id: "dsm-collab-menu",
@@ -77,14 +80,19 @@ export default class CollaborativeEditing extends PluginController<Config> {
         this.sessionInfo = evt;
       } else if (evt.type === "FullState") {
         const diff = this.diffMaker.onReceiveRemoteState(evt.state);
-        console.log("got fullstate:");
-        console.log("last send state: ", this.diffMaker.stateAtLastSend);
-        console.log("remote state: ", evt.state);
-        console.log("changes to remove: ", this.diffMaker.localChangeList);
-        console.log("diff: ", diff);
+        console.log("received remote state!", evt.state, diff);
 
-        for (const diffItem of diff) {
+        for (const diffItem of diff.listChanges) {
           applyDiffItem(diffItem);
+        }
+
+        if (diff.ticker !== "NOCHANGE") {
+          if (diff.ticker === undefined) {
+            Calc.controller.listModel.ticker.open = false;
+          } else {
+            Calc.controller.listModel.ticker.open = true;
+            Object.assign(Calc.controller.listModel.ticker, diff.ticker);
+          }
         }
 
         Calc.controller.updateTheComputedWorld();
@@ -95,25 +103,37 @@ export default class CollaborativeEditing extends PluginController<Config> {
           triggeredByCollab: true,
         });
 
+        if (diff.settings) {
+          console.log("diffsettings", diff.settings);
+          Calc.controller.getGrapher().setGrapherState(diff.settings);
+        }
+
         this.diffMaker.onAfterReceiveRemoteState();
       }
     });
 
     setInterval(() => {
       if (!this.hasPendingChanges) return;
+      if (this.isDragDropping) return;
       const changes = this.diffMaker.getAndClearCurrentChanges();
+      console.log("sending changes", changes);
       this.io.sendPartialState({
         type: "PartialState",
-        items: changes,
+        items: changes.listChanges,
+        ticker: changes.ticker,
+        settings: changes.settings,
       });
       this.hasPendingChanges = false;
-      console.log("sending partial state!");
     }, 250);
 
     Calc.controller.dispatcher.register((e) => {
       // if (!this.graphstateLoaded) return;
       // @ts-expect-error custom flag to prevent loops
       if (e.triggeredByCollab) return;
+
+      if (e.type === "start-dragdrop") this.isDragDropping = true;
+      if (e.type === "stop-dragdrop") this.isDragDropping = false;
+
       if (
         e.type !== "on-evaluator-changes" &&
         e.type !== "set-expression-properties-from-api" &&

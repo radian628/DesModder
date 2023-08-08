@@ -1,3 +1,5 @@
+import { deepObjEq } from "./util";
+
 export interface ListDiff<T, Key> {
   added: {
     add: T;
@@ -168,7 +170,7 @@ export function generateListDiff<T, Key>(
     removed.push(key(m.movedElement));
     added.push({
       add: m.movedElement,
-      after: m.afterIndex,
+      after: indexIntoNewList.get(key(m.movedElement)),
     });
   }
 
@@ -194,4 +196,10 @@ export function generateListDiff<T, Key>(
   }
 
   return { added, removed, order };
+}
+
+export function getObjectDiff(oldObj: any, newObj: any, sentinel = undefined) {
+  const isDifferent = !deepObjEq(oldObj, newObj);
+
+  return isDifferent ? newObj : sentinel;
 }

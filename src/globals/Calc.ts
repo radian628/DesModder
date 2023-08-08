@@ -28,7 +28,9 @@ export type DispatchedEvent =
         | "ui/container-resized"
         | "set-expression-properties-from-api"
         | "finish-deleting-item-after-animation"
-        | "image-load-success";
+        | "image-load-success"
+        | "start-dragdrop"
+        | "stop-dragdrop";
     }
   | {
       type: "keypad/set-minimized";

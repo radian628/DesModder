@@ -3,13 +3,14 @@ import {
   FutureProofItemState,
   GraphStateChange,
 } from "./api";
-import { generateListDiff } from "./diff";
-import { ItemState } from "./graphstate";
+import { generateListDiff, getObjectDiff } from "./diff";
+import { GrapherState, ItemState } from "./graphstate";
 import {
   addExpressionFromState,
   itemStateEq,
   modifyExpressionFromState,
 } from "./util";
+import { Ticker } from "@desmodder/graph-state";
 import { Calc } from "globals/window";
 
 export function applyDiffItem(diffItem: GraphStateChange) {
@@ -85,6 +86,8 @@ export class DiffMaker {
   stateAtLastSend: FutureProofGraphState;
   localChangeList: GraphStateChange[];
   oldState: FutureProofGraphState;
+  changedTicker?: Ticker;
+  changedSettings?: GrapherState;
 
   constructor() {
     this.stateAtLastSend = this.getState();
@@ -101,17 +104,30 @@ export class DiffMaker {
     this.localChangeList.push(
       ...generateGraphStateDiff(this.oldState, currState)
     );
+    this.changedTicker = getObjectDiff(
+      this.oldState.expressions.ticker,
+      currState.expressions.ticker
+    );
+    this.changedSettings = getObjectDiff(this.oldState.graph, currState.graph);
     this.oldState = currState;
   }
 
   onReceiveRemoteState(incomingState: FutureProofGraphState) {
     this.stageChanges();
-    const diff = generateGraphStateDiff(this.getState(), incomingState);
+    const currState = this.getState();
+    const diff = generateGraphStateDiff(currState, incomingState);
     const remoteChanges = subtractDiff(diff, this.localChangeList);
-    console.log("diff before/after", diff, remoteChanges);
-    return remoteChanges.filter(
-      (e) => graphStateChangeKey(e) !== Calc.controller.getSelectedItem()?.id
-    );
+    return {
+      listChanges: remoteChanges.filter(
+        (e) => graphStateChangeKey(e) !== Calc.controller.getSelectedItem()?.id
+      ),
+      settings: getObjectDiff(currState.graph, incomingState.graph),
+      ticker: getObjectDiff(
+        currState.expressions.ticker,
+        incomingState.expressions.ticker,
+        "NOCHANGE"
+      ),
+    };
   }
 
   onAfterReceiveRemoteState() {
@@ -124,8 +140,16 @@ export class DiffMaker {
   getAndClearCurrentChanges() {
     this.stageChanges();
     const oldChanges = this.localChangeList;
-    console.log("local change list", this.localChangeList);
+    const settings = this.changedSettings;
+    const ticker = this.changedTicker;
     this.localChangeList = [];
-    return oldChanges;
+    this.changedSettings = undefined;
+    this.changedTicker = undefined;
+
+    return {
+      listChanges: oldChanges,
+      settings,
+      ticker,
+    };
   }
 }

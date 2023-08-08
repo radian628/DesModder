@@ -264,6 +264,10 @@ app.ws("/:id", (ws, req) => {
           session.graphState.expressions.list,
           parsedMessage.items
         );
+        if (parsedMessage.ticker)
+          session.graphState.expressions.ticker = parsedMessage.ticker;
+        if (parsedMessage.settings)
+          session.graphState.graph = parsedMessage.settings;
         session.areAllClientsUpToDate = false;
         break;
       case "Join":

@@ -53,6 +53,8 @@ export const FullStateMessageParser = z
 export const PartialStateMessageParser = z.object({
   type: z.literal("PartialState"),
   items: z.array(GraphStateChangeParser),
+  ticker: z.optional(z.any()),
+  settings: z.optional(z.any()),
 });
 export type PartialMessageParser = z.infer<typeof PartialStateMessageParser>;
 
