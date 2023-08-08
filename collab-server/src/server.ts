@@ -264,7 +264,7 @@ app.ws("/:id", (ws, req) => {
           session.graphState.expressions.list,
           parsedMessage.items
         );
-        if (parsedMessage.ticker)
+        if (parsedMessage.ticker !== "NOCHANGE")
           session.graphState.expressions.ticker = parsedMessage.ticker;
         if (parsedMessage.settings)
           session.graphState.graph = parsedMessage.settings;

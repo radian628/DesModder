@@ -198,7 +198,11 @@ export function generateListDiff<T, Key>(
   return { added, removed, order };
 }
 
-export function getObjectDiff(oldObj: any, newObj: any, sentinel = undefined) {
+export function getObjectDiff(
+  oldObj: any,
+  newObj: any,
+  sentinel: any = undefined
+) {
   const isDifferent = !deepObjEq(oldObj, newObj);
 
   return isDifferent ? newObj : sentinel;

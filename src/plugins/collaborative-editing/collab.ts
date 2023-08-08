@@ -86,7 +86,7 @@ export class DiffMaker {
   stateAtLastSend: FutureProofGraphState;
   localChangeList: GraphStateChange[];
   oldState: FutureProofGraphState;
-  changedTicker?: Ticker;
+  changedTicker?: Ticker | "NOCHANGE" = "NOCHANGE";
   changedSettings?: GrapherState;
 
   constructor() {
@@ -106,7 +106,8 @@ export class DiffMaker {
     );
     this.changedTicker = getObjectDiff(
       this.oldState.expressions.ticker,
-      currState.expressions.ticker
+      currState.expressions.ticker,
+      "NOCHANGE"
     );
     this.changedSettings = getObjectDiff(this.oldState.graph, currState.graph);
     this.oldState = currState;
@@ -117,16 +118,25 @@ export class DiffMaker {
     const currState = this.getState();
     const diff = generateGraphStateDiff(currState, incomingState);
     const remoteChanges = subtractDiff(diff, this.localChangeList);
+
+    const isEditingTicker = !!document.activeElement?.closest(".dcg-ticker");
+
+    const ticker = !isEditingTicker
+      ? getObjectDiff(
+          currState.expressions.ticker,
+          incomingState.expressions.ticker,
+          "NOCHANGE"
+        )
+      : "NOCHANGE";
+
+    console.log("tickerchange", ticker);
+
     return {
       listChanges: remoteChanges.filter(
         (e) => graphStateChangeKey(e) !== Calc.controller.getSelectedItem()?.id
       ),
       settings: getObjectDiff(currState.graph, incomingState.graph),
-      ticker: getObjectDiff(
-        currState.expressions.ticker,
-        incomingState.expressions.ticker,
-        "NOCHANGE"
-      ),
+      ticker,
     };
   }
 
@@ -144,12 +154,12 @@ export class DiffMaker {
     const ticker = this.changedTicker;
     this.localChangeList = [];
     this.changedSettings = undefined;
-    this.changedTicker = undefined;
+    this.changedTicker = "NOCHANGE";
 
     return {
       listChanges: oldChanges,
       settings,
-      ticker,
+      ticker: ticker,
     };
   }
 }
