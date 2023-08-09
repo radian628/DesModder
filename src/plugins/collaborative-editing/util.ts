@@ -92,3 +92,33 @@ export function modifyExpressionFromState(state: ItemState, index: number) {
   deleteExpression(state.id);
   addExpressionFromState(state, index);
 }
+
+export class ElementToggler<Key = string> {
+  affectedElements = new Map<Key, HTMLElement>();
+
+  applyInner: (el: HTMLElement) => void;
+  removeInner: (el: HTMLElement) => void;
+
+  constructor(
+    applyInner: (el: HTMLElement) => void,
+    removeInner: (el: HTMLElement) => void
+  ) {
+    this.applyInner = applyInner;
+    this.removeInner = removeInner;
+  }
+
+  apply(key: Key, el: HTMLElement) {
+    this.remove(key);
+
+    this.affectedElements.set(key, el);
+    this.applyInner(el);
+  }
+
+  remove(key: Key) {
+    const oldElem = this.affectedElements.get(key);
+
+    if (oldElem) {
+      this.removeInner(oldElem);
+    }
+  }
+}

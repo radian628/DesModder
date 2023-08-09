@@ -58,9 +58,20 @@ export const PartialStateMessageParser = z.object({
 });
 export type PartialMessageParser = z.infer<typeof PartialStateMessageParser>;
 
+export const SelectExpressionMessageParser = z.object({
+  type: z.literal("SelectExpression"),
+  id: z.optional(z.string()), // id of the expression being selected; undefined = no selection
+  user: z.string(), // user ID
+  timestamp: z.number(), // lower timestamp = higher priority
+});
+export type SelectExpressionMessage = z.infer<
+  typeof SelectExpressionMessageParser
+>;
+
 const CollaborativeEditingSessionMessageParser = z.union([
   FullStateMessageParser,
   PartialStateMessageParser,
+  SelectExpressionMessageParser,
 ]);
 
 export const CollaborativeEditingSessionMessageToServerParser = z.union([
@@ -78,6 +89,7 @@ export const CollaborativeEditingSessionMessageToServerParser = z.union([
 export const sessionInfoParser = z.object({
   type: z.literal("SessionInfo"),
   usersOnline: z.array(z.string()),
+  myUserID: z.string(),
 });
 
 export const CollaborativeEditingSessionMessageToClientParser = z.union([

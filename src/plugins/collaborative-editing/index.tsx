@@ -1,12 +1,16 @@
 import {
   CollaborativeEditingSessionMessageToClientParser,
+  SelectExpressionMessage,
   sessionInfoParser,
 } from "./api";
 import { DiffMaker, applyDiffItem } from "./collab";
 import { CollabIO } from "./collab-io";
 import { getObjectDiff } from "./diff";
 import { ItemState } from "./graphstate";
+import "./index.less";
 import {
+  CSSClassToggler,
+  ElementToggler,
   addExpressionFromState,
   deleteExpression,
   getDesyncedExpressionIDs,
@@ -16,6 +20,7 @@ import View from "./view";
 import { jsx } from "DCGView";
 import { Calc } from "globals/window";
 import { PluginController } from "plugins/PluginController";
+import { hookIntoFunction } from "utils/listenerHelpers";
 import { z } from "zod";
 
 interface Config {
@@ -57,7 +62,55 @@ export default class CollaborativeEditing extends PluginController<Config> {
 
   isDragDropping = false;
 
+  lastKnownSelectedExpressionID?: string;
+
+  timeOfLastSelectChange = 0;
+
+  selectedExprIDs = new Map<string, SelectExpressionMessage>();
+
+  selectedExprElements = new ElementToggler(
+    (el) => {
+      el.dataset.isRemoteSelected = "true";
+    },
+    (el) => {
+      delete el.dataset.isRemoteSelected;
+    }
+  );
+
+  maybeUpdateSelectedExpression() {
+    const selectedExpressionID = Calc.controller.getSelectedItem()?.id;
+    if (this.lastKnownSelectedExpressionID !== selectedExpressionID) {
+      this.timeOfLastSelectChange = Date.now();
+      this.lastKnownSelectedExpressionID = selectedExpressionID;
+      this.io.sendChangeSelect(
+        selectedExpressionID,
+        this.timeOfLastSelectChange
+      );
+    }
+  }
+
+  lastVertKeyPressed: "Up" | "Down" = "Up";
+
+  onKeyDown = (e: KeyboardEvent) => {
+    if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+      this.lastVertKeyPressed = e.key === "ArrowUp" ? "Up" : "Down";
+    }
+  };
+
+  afterDisable(): void {
+    document.removeEventListener("keydown", this.onKeyDown);
+  }
+
   afterEnable(): void {
+    // document.addEventListener("keydown", this.onKeyDown);
+
+    Calc.controller.dispatcher.register((e) => {
+      if (e.type !== "on-special-key-pressed") return;
+      if (e.key === "Up" || e.key === "Down") {
+        this.lastVertKeyPressed = e.key;
+      }
+    });
+
     this.dsm.pillboxMenus?.addPillboxButton({
       id: "dsm-collab-menu",
       tooltip: "collab-menu",
@@ -78,9 +131,19 @@ export default class CollaborativeEditing extends PluginController<Config> {
     this.io.onReceive((evt) => {
       if (evt.type === "SessionInfo") {
         this.sessionInfo = evt;
+
+        let idNum = 1;
+        hookIntoFunction(
+          Calc.controller,
+          "generateId",
+          "collaborative-editing",
+          0,
+          (stop) => {
+            stop(`${this.sessionInfo?.myUserID}-${idNum++}`);
+          }
+        );
       } else if (evt.type === "FullState") {
         const diff = this.diffMaker.onReceiveRemoteState(evt.state);
-        console.log("received remote state!", evt.state, diff);
 
         for (const diffItem of diff.listChanges) {
           applyDiffItem(diffItem);
@@ -104,11 +167,24 @@ export default class CollaborativeEditing extends PluginController<Config> {
         });
 
         if (diff.settings) {
-          console.log("diffsettings", diff.settings);
           Calc.controller.getGrapher().setGrapherState(diff.settings);
         }
 
         this.diffMaker.onAfterReceiveRemoteState();
+      } else if (evt.type === "SelectExpression") {
+        console.log("select", evt);
+
+        if (evt.id === undefined) {
+          this.selectedExprIDs.delete(evt.user);
+          this.selectedExprElements.remove(evt.user);
+        } else {
+          this.selectedExprIDs.set(evt.user, evt);
+          const elem = Calc.controller.getItemModel(evt.id)?.dcgView?.rootNode;
+          if (elem) {
+            this.selectedExprElements.apply(evt.user, elem);
+          }
+        }
+        console.log(this.selectedExprIDs);
       }
     });
 
@@ -116,7 +192,6 @@ export default class CollaborativeEditing extends PluginController<Config> {
       if (!this.hasPendingChanges) return;
       if (this.isDragDropping) return;
       const changes = this.diffMaker.getAndClearCurrentChanges();
-      console.log("sending changes", changes);
       this.io.sendPartialState({
         type: "PartialState",
         items: changes.listChanges,
@@ -133,6 +208,33 @@ export default class CollaborativeEditing extends PluginController<Config> {
 
       if (e.type === "start-dragdrop") this.isDragDropping = true;
       if (e.type === "stop-dragdrop") this.isDragDropping = false;
+
+      this.maybeUpdateSelectedExpression();
+
+      const selectedItem = Calc.controller.getSelectedItem();
+
+      const selectedItemInfo = Array.from(this.selectedExprIDs.entries()).find(
+        (e) => {
+          return e[1].id === selectedItem?.id;
+        }
+      )?.[1];
+
+      if (
+        selectedItemInfo &&
+        selectedItemInfo.timestamp < this.timeOfLastSelectChange
+      ) {
+        Calc.controller.dispatch({
+          type: "set-focus-location",
+          location: {
+            type: "expression",
+            id: Calc.controller.getItemModelByIndex(
+              (Calc.controller.getSelectedItem()?.index ?? 1) +
+                (this.lastVertKeyPressed === "Up" ? -1 : 1)
+            )?.id,
+          },
+        });
+        this.maybeUpdateSelectedExpression();
+      }
 
       if (
         e.type !== "on-evaluator-changes" &&

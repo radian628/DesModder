@@ -1,15 +1,7 @@
-import {
-  FutureProofGraphState,
-  FutureProofItemState,
-  GraphStateChange,
-} from "./api";
+import { FutureProofGraphState, GraphStateChange } from "./api";
 import { generateListDiff, getObjectDiff } from "./diff";
 import { GrapherState, ItemState } from "./graphstate";
-import {
-  addExpressionFromState,
-  itemStateEq,
-  modifyExpressionFromState,
-} from "./util";
+import { addExpressionFromState, itemStateEq } from "./util";
 import { Ticker } from "@desmodder/graph-state";
 import { Calc } from "globals/window";
 
@@ -128,8 +120,6 @@ export class DiffMaker {
           "NOCHANGE"
         )
       : "NOCHANGE";
-
-    console.log("tickerchange", ticker);
 
     return {
       listChanges: remoteChanges.filter(

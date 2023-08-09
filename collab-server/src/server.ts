@@ -67,6 +67,7 @@ interface CollabConnection {
   displayName?: string;
   lastUpdateTime: number;
   alive: boolean;
+  userID: string;
 }
 
 interface CollabSession {
@@ -200,6 +201,8 @@ function broadcast(
   }
 }
 
+let userCounter = 0;
+
 app.ws("/:id", (ws, req) => {
   const id = req.url.split("/")[1];
   const session = sessions.get(id);
@@ -209,6 +212,7 @@ app.ws("/:id", (ws, req) => {
     ws,
     lastUpdateTime: Date.now(),
     alive: true,
+    userID: (userCounter++).toString(),
   };
 
   session.connections.set(ws, conn);
@@ -280,9 +284,13 @@ app.ws("/:id", (ws, req) => {
             usersOnline: Array.from(session.connections.values()).map(
               (conn) => conn.displayName
             ),
+            myUserID: session.connections.get(ws).userID,
           })
         );
         session.areAllClientsUpToDate = false;
+        break;
+      case "SelectExpression":
+        broadcast(ws, session, JSON.stringify(parsedMessage));
         break;
     }
   });

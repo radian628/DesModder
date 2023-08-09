@@ -75,6 +75,21 @@ export class CollabIO {
     this.ws.send(JSON.stringify(msg));
   }
 
+  sendChangeSelect(id: string | undefined, timestamp: number) {
+    if (!this.plugin.sessionInfo) return;
+
+    const msg = {
+      type: "SelectExpression",
+      id,
+      user: this.plugin.sessionInfo?.myUserID,
+      timestamp,
+    };
+
+    console.log("msg", msg);
+
+    this.ws.send(JSON.stringify(msg));
+  }
+
   onReceive(handler: ReceiveHandler) {
     this.ws.addEventListener("message", (event) => {
       const evt = JSON.parse(event.data) as z.infer<
