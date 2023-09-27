@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/method-signature-style, @typescript-eslint/dot-notation */
+import DSM from "#DSM";
 import GLesmos from "./GLesmos";
 import BetterEvaluationView from "./better-evaluation-view";
 import BuiltinSettings from "./builtin-settings";
@@ -21,11 +22,11 @@ import RightClickTray from "./right-click-tray";
 import SetPrimaryColor from "./set-primary-color";
 import ShiftEnterNewline from "./shift-enter-newline";
 import ShowTips from "./show-tips";
+import SyntaxHighlighting from "./syntax-highlighting";
 import TextMode from "./text-mode";
 import VideoCreator from "./video-creator";
 import Wakatime from "./wakatime";
 import WolframToDesmos from "./wolfram2desmos";
-import DSM from "MainController";
 
 interface ConfigItemGeneric {
   key: string;
@@ -52,11 +53,16 @@ export interface ConfigItemNumber extends ConfigItemGeneric {
   step: number;
   variant?: "range" | "number";
 }
+export interface ConfigItemColorList extends ConfigItemGeneric {
+  type: "color-list";
+  default: string[];
+}
 
 export type ConfigItem =
   | ConfigItemBoolean
   | ConfigItemString
-  | ConfigItemNumber;
+  | ConfigItemNumber
+  | ConfigItemColorList;
 
 export type GenericSettings = Record<string, any>;
 
@@ -125,6 +131,7 @@ export const keyToPlugin = {
   compactView: CompactView,
   exprActionButtons: ExprActionButtons,
   collaborativeEditing: CollaborativeEditing,
+  syntaxHighlighting: SyntaxHighlighting,
 } satisfies Record<string, Plugin<any>>;
 
 export const pluginList = Object.values(keyToPlugin);
@@ -178,6 +185,7 @@ export class TransparentPlugins implements KeyToPluginInstance {
   get multiline () { return this.ep["multiline"]; }
   get exprActionButtons () { return this.ep["expr-action-buttons"]; }
   get collaborativeEditing () { return this.ep["collaborative-editing"]; } 
+  get syntaxHighlighting () { return this.ep["syntax-highlighting"]}
 }
 
 export type IDToPluginSettings = {

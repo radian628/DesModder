@@ -1,5 +1,5 @@
 import { insertElement, replaceElement } from "./preload/replaceElement";
-import window, { Calc } from "globals/window";
+import window, { Calc } from "#globals";
 import {
   plugins,
   pluginList,
@@ -8,8 +8,8 @@ import {
   TransparentPlugins,
   IDToPluginSettings,
   PluginInstance,
-} from "plugins";
-import { postMessageUp, mapToRecord, recordToMap } from "utils/messages";
+} from "./plugins";
+import { postMessageUp, mapToRecord, recordToMap } from "#utils/messages.ts";
 
 export default class DSM extends TransparentPlugins {
   /**
@@ -28,7 +28,6 @@ export default class DSM extends TransparentPlugins {
     super();
     // default values
     this.forceDisabled = window.DesModderPreload!.pluginsForceDisabled;
-    if (Calc.controller.isGeometry()) this.forceDisabled.add("text-mode");
     this.pluginsEnabled = new Map(
       pluginList.map((plugin) => [plugin.id, plugin.enabledByDefault] as const)
     );
@@ -202,7 +201,7 @@ export default class DSM extends TransparentPlugins {
   setPluginSetting(
     pluginID: PluginID,
     key: string,
-    value: boolean | string | number,
+    value: boolean | string | number | string[],
     temporary: boolean = false
   ) {
     this.updatePluginSettings(pluginID, { [key]: value }, temporary);

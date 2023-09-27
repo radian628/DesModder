@@ -1,6 +1,6 @@
 import { Console } from "../globals/window";
 import parseFile, { Block } from "./replacementHelpers/parse";
-import replacementStrings from "plugins/index-replacements";
+import replacementStrings from "#plugins/index-replacements.ts";
 
 const replacements: Block[] = [];
 
@@ -32,6 +32,7 @@ const pluginNames = [
   "better-evaluation-view",
   "manage-metadata",
   "pillbox-menus",
+  "syntax-highlighting",
 ];
 
 replacements.forEach((r) => {

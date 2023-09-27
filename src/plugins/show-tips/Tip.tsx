@@ -1,9 +1,9 @@
 import "./Tip.less";
 import { getTipData } from "./tips";
-import { Component, jsx } from "DCGView";
-import { If } from "components";
-import { Calc } from "globals/window";
-import { format } from "i18n/i18n-core";
+import { Component, jsx } from "#DCGView";
+import { If } from "#components";
+import { Calc } from "#globals";
+import { format } from "#i18n";
 
 export default class Tip extends Component {
   currentTipIndex!: number;
@@ -25,7 +25,7 @@ export default class Tip extends Component {
               target="_blank"
               onTap={(e: MouseEvent) => e.stopPropagation()}
             >
-              {format("menu-learn-more")}
+              {() => format("menu-learn-more")}
             </a>
           )}
         </If>

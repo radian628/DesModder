@@ -23,14 +23,15 @@ GLesmos-desc = Render implicits on the GPU. Disabled on tab reload. Can cause th
 GLesmos-label-toggle-glesmos = Render with GLesmos
 GLesmos-confirm-lines = Confirm lines
 GLesmos-confirm-lines-body = GLesmos line rendering can be slow. Be careful, especially for a list of layers.
+GLesmos-no-support = Unfortunately, your browser does not support GLesmos because it does not support WebGL2.
 # Missing: error messages
 
 ## Tips
 show-tips-name = Show Tips
-show-tips-desc = Show tips at the bottom of the expressions list.
-show-tips-tip-export-videos = When exporting videos, prefer MP4 or APNG over GIF.
+show-tips-desc = Show tips at the bottom of the expressions list
+show-tips-tip-export-videos = When exporting videos, prefer MP4 or APNG over GIF
 show-tips-tip-disable-graphpaper = Disabling graphpaper in Calculator Settings is useful for writing a sequence of equations
-show-tips-tip-paste-asciimath = Past ASCII Math directly into Desmos
+show-tips-tip-paste-asciimath = Paste ASCII Math directly into Desmos
 show-tips-tip-pin = Pin (bookmark) commonly-used expressions for easy access
 show-tips-tip-long-video-capture = Before starting a long video capture, it's safest to test the beginning of an export
 show-tips-tip-find-replace = Find and Replace is great for renaming variables
@@ -38,12 +39,12 @@ show-tips-tip-duplicate = Press Ctrl+Q or Ctrl+Shift+Q to duplicate the current 
 show-tips-tip-note-newline = Type Shift+Enter inside notes and folder titles for a newline
 show-tips-tip-hide-errors = Click the yellow triangle (or type Shift+Enter) to fade a warning and hide sliders
 show-tips-tip-note-folder = Type " to quickly make a note or "folder" for a folder
-show-tips-tip-arctan = Use arctan(y,x) instead of arctan(y/x) to get the angle of a point
+show-tips-tip-arctan = Use arctan(y, x) instead of arctan(y / x) to get the angle of a point
 show-tips-tip-indefinite-integral = Integrals can have infinite bounds
 show-tips-tip-random = The random function can sample from a distribution
 show-tips-tip-two-argument-round = Two-argument round is great for rounding labels
 show-tips-tip-two-argument-sort = Sort one list using keys of another list with sort(A, B)
-show-tips-tip-custom-colors = Create custom colors and re-use them using variables
+show-tips-tip-custom-colors = Create custom colors with the functions rgb and hsv
 show-tips-tip-ctrl-f = Press Ctrl+F to search through expressions
 show-tips-tip-derivatives = Take derivatives using prime notation or Leibniz notation
 show-tips-tip-unbounded-list-slices = List slices do not have to be bounded
@@ -71,7 +72,7 @@ show-tips-tip-share-permalink = You can share graphs via permalink without signi
 show-tips-tip-point-coordinate = Extract the x or y coordinate of points by appending .x or .y to your point variable
 show-tips-tip-audiotrace = Listen to your graphs using Audio Trace!
 show-tips-tip-audiotrace-note-frequency = Note frequencies for audio trace depend on how high or low they are located in the viewport
-show-tips-tip-audiotrace-range = Audio Trace range starts on an E4 (329.63Hz) and ends on E5 (659.25Hz)
+show-tips-tip-audiotrace-range = Audio Trace range starts on an E4 (329.63 Hz) and ends on E5 (659.25 Hz)
 show-tips-tip-other-calculators = Desmos also has other calculators!
 show-tips-tip-lock-viewport = Don't want your viewport to be moved? Lock it in the graph settings!
 show-tips-tip-glesmos = Enable the GLesmos plugin to make some implicits run faster
@@ -86,7 +87,11 @@ show-tips-tip-huggy = Huggy!
 text-mode-name = Text Mode BETA
 text-mode-desc = Expect bugs. Temporary documentation:
 text-mode-toggle = Toggle Text Mode
-# Missing: error messages
+text-mode-toggle-spaces = Spaces
+text-mode-toggle-spaces-tooltip = Include unnecessary spaces when formatting
+text-mode-toggle-newlines = Newlines
+text-mode-toggle-newlines-tooltip = Include newlines and indentation when formatting
+text-mode-format = Format
 
 ## Debug Mode
 debug-mode-name = Debug Mode
@@ -241,6 +246,8 @@ manage-metadata-desc = Manage Metadata, such as GLesmos or pinned/unpinned statu
 ## Intellisense
 intellisense-name = Intellisense
 intellisense-desc = Brings several common IDE features to Desmos, including autocompletion suggestions, function call help, and jump to definition. Documentation here:
+intellisense-opt-subscriptify-name = Auto-Subscriptify
+intellisense-opt-subscriptify-desc = Automatically converts text of variables/functions with subscripts when they are typed without subscripts.
 intellisense-jump2def-menu-instructions = has multiple definitions. Pick one from below to jump to.
 
 ## Compact View
@@ -261,7 +268,7 @@ compact-view-opt-noSeparatingLines-desc = Removes the separating lines between e
 compact-view-opt-highlightAlternatingLines-name = Highlight Alternating Lines
 compact-view-opt-highlightAlternatingLines-desc = Highlights alternating expressions so that they can be easily distinguished from one another.
 compact-view-opt-hideEvaluations-name = Collapse Evaluations
-compact-view-opt-hideEvaluations-desc = Puts evaluations off to the side. They can be focused or hovered to be shown. 
+compact-view-opt-hideEvaluations-desc = Puts evaluations off to the side. They can be focused or hovered to be shown.
 
 ## Multiline
 multiline-name = Multiline Expressions
@@ -277,11 +284,11 @@ multiline-opt-multilinifyDelayAfterEdit-desc = Multiline expressions should be u
 custom-mathquill-config-name = Custom MathQuill Config
 custom-mathquill-config-desc = Changes how equation input works.
 custom-mathquill-config-opt-superscriptOperators-name = Operators in Exponents
-custom-mathquill-config-opt-superscriptOperators-desc = Allows you to type operators like '+' in exponents
+custom-mathquill-config-opt-superscriptOperators-desc = Allows you to type operators like "+" in exponents
 custom-mathquill-config-opt-noAutoSubscript-name = Disable Auto Subscripts
 custom-mathquill-config-opt-noAutoSubscript-desc = Disable automatically putting numbers typed after variable names in subscripts
 custom-mathquill-config-opt-noNEquals-name = Disable n= Sums
-custom-mathquill-config-opt-noNEquals-desc = Disable sums automatically placing 'n=' in the lower bound
+custom-mathquill-config-opt-noNEquals-desc = Disable sums automatically placing "n=" in the lower bound
 custom-mathquill-config-opt-subSupWithoutOp-name = Subscripts/Superscripts Without Operand
 custom-mathquill-config-opt-subSupWithoutOp-desc = Allows subscripts and superscripts to be made even if not preceded by anything
 custom-mathquill-config-opt-allowMixedBrackets-name = Allow Mismatched Brackets
@@ -289,7 +296,7 @@ custom-mathquill-config-opt-allowMixedBrackets-desc = Allows all brackets to mat
 custom-mathquill-config-opt-subscriptReplacements-name = Allow Replacements in Subscripts
 custom-mathquill-config-opt-subscriptReplacements-desc = Allows symbols and function names to be typed into subscripts
 custom-mathquill-config-opt-noPercentOf-name = Disable % of
-custom-mathquill-config-opt-noPercentOf-desc = Makes typing '%' insert the percent character instead of '% of'
+custom-mathquill-config-opt-noPercentOf-desc = Makes typing "%" insert the percent character instead of "% of"
 custom-mathquill-config-opt-commaDelimiter-name = Comma Separators
 custom-mathquill-config-opt-commaDelimiter-desc = Inserts commas as delimiters in numbers (purely visual)
 custom-mathquill-config-opt-delimiterOverride-name = Custom Delimiter
@@ -298,9 +305,29 @@ custom-mathquill-config-opt-leftIntoSubscript-name = Left/Right into Subscripts
 custom-mathquill-config-opt-leftIntoSubscript-desc = Moving the cursor left or right will go into subscript instead of superscript
 custom-mathquill-config-opt-extendedGreek-name = More Greek Letters
 custom-mathquill-config-opt-extendedGreek-desc = Enables replacements for all supported greek letters
+custom-mathquill-config-opt-lessFSpacing-name = Less Spacing Around "f"
+custom-mathquill-config-opt-lessFSpacing-desc = Reduces extra spacing around the letter "f"
 
 ## Collaborative Editing
 collaborative-editing-name = Collaborative Editing
 collaborative-editing-desc = Work with others on a graph at the same time!
 collaborative-editing-opt-hostLink-name = Host Link
 collaborative-editing-opt-hostLink-desc = Server to use if you are hosting a collaborative session. Can be safely ignored if you are not hosting.
+
+## Syntax Highlighting
+syntax-highlighting-name = Syntax Highlighting
+syntax-highlighting-desc = Color in various parts of expressions to make them easier to reason about.
+syntax-highlighting-opt-bracketPairColorization-name = Bracket Pair Colorization
+syntax-highlighting-opt-bracketPairColorization-desc = Applies a set of alternating colors to brackets (e.g. ()[]{"{"}{"}"}||) to make matching bracket pairs easy to spot.
+syntax-highlighting-opt-bracketPairColorizationColors-name = Bracket Pair Colors
+syntax-highlighting-opt-bracketPairColorizationColors-desc = Sets the number and order of colors that are used for bracket pair colorization.
+syntax-highlighting-opt-bpcColorInText-name = Colorize Text in Brackets
+syntax-highlighting-opt-bpcColorInText-desc = Applies Bracket Pair Colors to the text within the brackets.
+syntax-highlighting-opt-thickenBrackets-name = Thicken Brackets
+syntax-highlighting-opt-thickenBrackets-desc = Add additional thickness to brackets to assist in bracket colorization.
+syntax-highlighting-opt-highlightBracketBlocks-name = Highlight Bracket Blocks
+syntax-highlighting-opt-highlightBracketBlocks-desc = Highlight the smallest enclosing bracket pair containing the text cursor.
+syntax-highlighting-opt-highlightBracketBlocksHover-name = Highlight on Hover
+syntax-highlighting-opt-highlightBracketBlocksHover-desc = Highlight the smallest enclosing bracket pair containing the mouse.
+syntax-highlighting-opt-underlineHighlightedRanges-name = Underline Highlighted Ranges
+syntax-highlighting-opt-underlineHighlightedRanges-desc = Puts a dark underline under highlighted ranges for better visibility.

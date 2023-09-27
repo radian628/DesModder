@@ -2,20 +2,20 @@ import {
   PartialFunctionCall,
   TryFindMQIdentResult,
   getController,
+  getCorrectableIdentifier,
   getMathquillIdentifierAtCursorPosition,
   getPartialFunctionCall,
 } from "./latex-parsing";
 import { IntellisenseState } from "./state";
 import { pendingIntellisenseTimeouts, setIntellisenseTimeout } from "./utils";
 import { JumpToDefinitionMenuInfo, View } from "./view";
-import { DCGView, MountedComponent, unmountFromNode } from "DCGView";
-import { MathQuillField, MathQuillView } from "components";
-import { ItemModel, TextModel } from "globals/models";
-import { Calc } from "globals/window";
-import { PluginController } from "plugins/PluginController";
-import { getMetadata } from "plugins/manage-metadata/manage";
-import { hookIntoOverrideKeystroke } from "utils/listenerHelpers";
-import { isDescendant } from "utils/utils";
+import { DCGView, MountedComponent, unmountFromNode } from "#DCGView";
+import { MathQuillField, MathQuillView } from "#components";
+import { ItemModel, TextModel, Calc } from "#globals";
+import { PluginController } from "#plugins/PluginController.ts";
+import { getMetadata } from "#plugins/manage-metadata/sync.ts";
+import { hookIntoOverrideKeystroke } from "#utils/listenerHelpers.ts";
+import { isDescendant } from "#utils/utils.ts";
 
 export type BoundIdentifier =
   | {
@@ -64,11 +64,20 @@ export function getExpressionLatex(id: string): string | undefined {
   ).latex;
 }
 
-export default class Intellisense extends PluginController {
+export default class Intellisense extends PluginController<{
+  subscriptify: boolean;
+}> {
   static id = "intellisense" as const;
   static enabledByDefault = false;
-  static descriptionLearnMore =
-    "https://github.com/DesModder/DesModder/tree/main/src/plugins/intellisense/docs/README.md";
+  static descriptionLearnMore = "https://www.desmodder.com/intellisense";
+
+  static config = [
+    {
+      type: "boolean",
+      key: "subscriptify",
+      default: false,
+    },
+  ] as const;
 
   view: MountedComponent | undefined;
 
@@ -706,6 +715,35 @@ export default class Intellisense extends PluginController {
       if (e.type === "delete-item-and-animate-out") {
         this.canHaveIntellisense = false;
         this.view?.update();
+      }
+
+      if (e.type === "set-item-latex") {
+        if (this.settings.subscriptify && this.latestMQ) {
+          const ident = getCorrectableIdentifier(this.latestMQ);
+
+          // Don't want to auto-subscriptify a length-1 id like "x";
+          // no change but breaks cursor position
+          if (ident.ident.length === 1) return;
+
+          if (
+            this.latestMQ.__options.autoOperatorNames[
+              ident.ident.replace(/_/g, "")
+            ] ||
+            this.latestMQ.__options.autoCommands[ident.ident.replace(/_/g, "")]
+          ) {
+            return;
+          }
+
+          const match = this.intellisenseState
+            .boundIdentifiersArray()
+            .find((e) => e.variableName === ident.ident);
+
+          if (match) {
+            ident.back();
+            this.latestMQ.typedText(match.variableName);
+            this.latestMQ.keystroke("Right");
+          }
+        }
       }
     });
   }
