@@ -15,12 +15,11 @@ import { EditorState } from "@codemirror/state";
 import { EditorView, keymap } from "@codemirror/view";
 import { parseMixed } from "@lezer/common";
 import { parser as jsParser } from "@lezer/javascript";
-import { jsx } from "DCGView";
-import { FolderModel } from "globals/models";
-import { Calc } from "globals/window";
-import { PluginController } from "plugins/PluginController";
-import { getTextModeConfig } from "plugins/text-mode";
-import { textModeParser } from "plugins/text-mode/lezer";
+import { jsx } from "#DCGView";
+import { FolderModel, Calc } from "#globals";
+import { PluginController } from "#plugins/PluginController.ts";
+import { textModeParser } from "#plugins/text-mode/lezer/index.ts";
+import { buildConfig } from "text-mode-core";
 import { Project } from "ts-morph";
 import * as ts from "typescript";
 
@@ -118,7 +117,7 @@ export default class ComputedExpressions extends PluginController {
                   {
                     code,
                     tmConfig: (() => {
-                      const cfg = getTextModeConfig();
+                      const cfg = buildConfig({});
                       return { ...cfg, parseDesmosLatex: undefined };
                     })(),
                     id: Calc.controller.getSelectedItem()?.id ?? 0,

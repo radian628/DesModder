@@ -7,8 +7,8 @@ import {
   ViewUpdate,
   WidgetType,
 } from "@codemirror/view";
-import { DCGView } from "DCGView";
-import { InlineMathInputView, MathQuillField } from "components";
+import { DCGView } from "#DCGView";
+import { InlineMathInputView, MathQuillField } from "#components";
 
 function escapeString(str: string) {
   return JSON.stringify(str).slice(1, -1);

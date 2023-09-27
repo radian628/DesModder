@@ -6,13 +6,35 @@ import { loadFile } from "./loaders/utils.mjs";
 import esbuild from "esbuild";
 import { copy } from "esbuild-plugin-copy";
 import { lessLoader } from "esbuild-plugin-less";
-import RawPlugin from "esbuild-plugin-raw";
 import { promises as fs } from "fs";
 import parseArgs from "minimist-lite";
+import * as path from "node:path";
 
 const argv = parseArgs(process.argv.slice(2));
 
 const unindent2spaces = (s) => s.toString().replaceAll(/\n {2}|\n\s*$/g, "\n");
+
+// plugin for the ?raw query param
+// to make "raw" resources use the text loader
+const rawQueryParamPlugin = {
+  name: "raw",
+  setup(build) {
+    build.onResolve({ filter: /\?.*raw/ }, (args) => {
+      return {
+        path: path.join(args.resolveDir, args.path),
+        namespace: "raw-ns",
+      };
+    });
+    build.onLoad({ filter: /.*/, namespace: "raw-ns" }, async (args) => {
+      return {
+        contents: (
+          await fs.readFile(args.path.replace(/\?.*$/, ""))
+        ).toString(),
+        loader: "text",
+      };
+    });
+  },
+};
 
 if (argv.help) {
   console.log(
@@ -64,10 +86,10 @@ const opts = {
     esbuildPluginInline(),
     esbuildPluginLezer(),
     esbuildPluginReplacements(),
+    rawQueryParamPlugin,
     // The copy plugin *should* support array or glob "from", but I encountered
     //    error: Cannot read properties of undefined (reading 'slice')
     //    at setup (node_modules/esbuild-plugin-copy/dist/index.mjs:69:23)
-    RawPlugin(),
     copy({
       resolveFrom: "cwd",
       assets: {

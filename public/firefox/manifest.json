@@ -22,8 +22,9 @@
     }
   ],
   "web_accessible_resources": [
+    "script.css",
     "script.js",
-    "preloadScript.js",
+    "preload/script.js",
     "plugins/computed-expressions/sandbox-src.js"
   ],
   "permissions": [

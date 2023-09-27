@@ -1,4 +1,4 @@
-import { textModeExprToLatex, textToRaw } from "../../../text-mode-core";
+import { textModeExprToLatex, textToRaw } from "text-mode-core";
 
 console.log("sandbox is confirmed to be running!");
 
