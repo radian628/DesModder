@@ -126,7 +126,7 @@ __options__
 
 ```js
 drawSketchToCtx({
-  sketch: $sketch, ctx: $ctx, projection: $projection, poiLabelsLayer: $n,
+  sketch: $sketch, drawContext: $drawCtx, poiLabelsLayer: $n,
   clickableObjectsLayer: $o, geometryContext: $a, showMovablePoints: $l
 }) {__body__}
 ```
@@ -142,11 +142,7 @@ if (!$ee.branches || !$ee.branches.length) return;
 ```js
 __guard__
 // allow-ids: of
-for (const branch of $sketch.branches) {
-  if (branch.graphMode === "GLesmos") {
-    DesModder.drawGLesmosSketchToCtx?.(branch.compiledGL, $ctx, $projection, $sketch.id);
-  }
-}
+DesModder.drawGLesmosSketchToCtx?.($drawCtx, $sketch);
 ```
 
 ## Pass GLesmos flag to worker
@@ -162,9 +158,12 @@ addStatement($stmt) {
 
 *Replace* `body` with
 ```js
-if ($stmt.type === "statement") {
-  $stmt.glesmos = DSM.glesmos?.isGlesmosMode($stmt.id);
-  $stmt.glesmosLinesConfirmed = DSM.glesmos?.isGLesmosLinesConfirmed($stmt.id);
+if ($stmt.type === "statement" && DSM.glesmos?.isGlesmosMode($stmt.id)) {
+  $stmt = {
+    ...$stmt,
+    glesmos: true,
+    glesmosLinesConfirmed: DSM.glesmos?.isGLesmosLinesConfirmed($stmt.id)
+  }
 }
 __body__
 ```
@@ -185,36 +184,18 @@ function $_graphFunc(____) {
 
 The code loops over the different IR objects `$ir`.
 
-*Find* inside `graph`
+*Find* inside `graph` => `compute2d`
 ```js
-.wrap($).eachElement(($ir, $) => {
-  __body__
-})
+let $branch = $c({
+  viewState: $viewState,
+  graphInfo: $graphInfo,
+  compiled: $compiled,
+  derivative: $derivative
+}),
+  $box = $($(this), $ir)
 ```
 
-The `styles` object provides `styles.fillOpacity` and `styles.color`.
-
-*Find* inside `body`
-```js
-$styles.fillOpacity =
-```
-
-This is just for finding the `$graphs` list.
-
-*Find* inside `body`
-```js
-if ($W !== void 0 && $X !== void 0 && isFinite($W) && isFinite($X)) {
-  let $ie = $a(____);
-  $graphs.push(____)
-}
-```
-
-*Find* inside `body` => `if2d`
-```js
-if (!$is3d($T.graphMode) || ____) {
-```
-
-*Replace* `if2d` with
+*Replace* `compute2d` with
 ```js
 if (this.userData.glesmos && self.dsm_compileGLesmos) {
   const lines =
@@ -228,28 +209,15 @@ if (this.userData.glesmos && self.dsm_compileGLesmos) {
     } catch {}
   }
   const newCompiled = self.dsm_compileGLesmos(
-    $ir, $styles.color, $styles.fillOpacity ?? 0, $styles.lineOpacity, this.userData.lines !== false ? $styles.lineWidth : 0.0,
+    $ir, $graphInfo.color, $graphInfo.fillOpacity ?? 0, $graphInfo.lineOpacity, this.userData.lines !== false ? $graphInfo.lineWidth : 0.0,
     derivativeX, derivativeY
   );
-  const prev =  $graphs[$graphs.length - 1];
-  if (prev?.graphMode === "GLesmos") {
-    // merge GLesmos graphs when possible
-    newCompiled.hasOutlines = newCompiled.hasOutlines && prev.hasOutlines
-    const prevGL = prev.compiledGL;
-    // allow-ids: of, dep
-    for (let dep of newCompiled.deps) {
-      if (!prevGL.deps.includes(dep)) {
-        prevGL.deps.push(dep);
-      }
-    }
-    prevGL.chunks.push(...newCompiled.chunks);
-  } else {
-    $graphs.push({
-      graphMode: "GLesmos",
-      compiledGL: newCompiled,
-      segments: [],
-      poi: {}
-    })
-  }
-} else __if2d__
+  return [{
+    graphMode: "GLesmos",
+    compiledGL: newCompiled,
+    segments: [],
+    poi: {}
+  }]
+}
+__compute2d__
 ```

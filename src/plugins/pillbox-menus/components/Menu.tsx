@@ -1,15 +1,8 @@
 import PillboxMenus from "..";
 import "./Menu.less";
-import { Component, jsx } from "DCGView";
-import Toggle from "components/Toggle";
-import {
-  If,
-  Switch,
-  Checkbox,
-  Tooltip,
-  For,
-} from "components/desmosComponents";
-import { format } from "i18n/i18n-core";
+import { Component, jsx } from "#DCGView";
+import { Toggle, If, Checkbox, Tooltip, For, Match } from "#components";
+import { format } from "#i18n";
 import {
   ConfigItem,
   ConfigItemString,
@@ -18,7 +11,7 @@ import {
   PluginID,
   plugins,
   ConfigItemNumber,
-} from "plugins";
+} from "#plugins/index.ts";
 
 export function MenuFunc(pm: PillboxMenus) {
   return <Menu pm={pm} />;
@@ -176,17 +169,16 @@ export default class Menu extends Component<{
       <div>
         {plugin.config.map((item: ConfigItem) => (
           <If predicate={() => item.shouldShow?.(pluginSettings) ?? true}>
-            {() => (
-              <Switch key={() => item.type}>
-                {() =>
-                  ({
-                    boolean: booleanOption,
-                    string: stringOption,
-                    number: numberOption,
-                  }[item.type](this.pm, item, plugin, pluginSettings))
-                }
-              </Switch>
-            )}
+            {() =>
+              Match(() => item, {
+                boolean: () =>
+                  booleanOption(this.pm, item, plugin, pluginSettings),
+                string: () =>
+                  stringOption(this.pm, item, plugin, pluginSettings),
+                number: () =>
+                  numberOption(this.pm, item, plugin, pluginSettings),
+              })
+            }
           </If>
         ))}
       </div>
