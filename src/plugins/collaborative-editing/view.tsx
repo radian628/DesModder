@@ -1,6 +1,6 @@
+import { Component, jsx } from "#DCGView";
+import { For, If, IfElse } from "#components";
 import CollaborativeEditing from ".";
-import { Component, jsx } from "DCGView";
-import { For, If, IfElse } from "components";
 
 export default class View extends Component<{ plugin: CollaborativeEditing }> {
   template() {

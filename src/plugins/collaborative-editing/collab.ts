@@ -1,9 +1,9 @@
+import { Calc } from "#globals";
 import { FutureProofGraphState, GraphStateChange } from "./api";
 import { generateListDiff, getObjectDiff } from "./diff";
 import { GrapherState, ItemState } from "./graphstate";
 import { addExpressionFromState, itemStateEq } from "./util";
 import { Ticker } from "@desmodder/graph-state";
-import { Calc } from "globals/window";
 
 export function applyDiffItem(diffItem: GraphStateChange) {
   if (diffItem.type === "AddItem") {

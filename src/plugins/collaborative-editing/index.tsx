@@ -1,3 +1,7 @@
+import { jsx } from "#DCGView";
+import { Calc } from "#globals";
+import { PluginController } from "#plugins/PluginController.ts";
+import { hookIntoFunction } from "#utils/listenerHelpers.ts";
 import {
   CollaborativeEditingSessionMessageToClientParser,
   SelectExpressionMessage,
@@ -9,7 +13,6 @@ import { getObjectDiff } from "./diff";
 import { ItemState } from "./graphstate";
 import "./index.less";
 import {
-  CSSClassToggler,
   ElementToggler,
   addExpressionFromState,
   deleteExpression,
@@ -17,10 +20,6 @@ import {
   modifyExpressionFromState,
 } from "./util";
 import View from "./view";
-import { jsx } from "DCGView";
-import { Calc } from "globals/window";
-import { PluginController } from "plugins/PluginController";
-import { hookIntoFunction } from "utils/listenerHelpers";
 import { z } from "zod";
 
 interface Config {
@@ -191,6 +190,7 @@ export default class CollaborativeEditing extends PluginController<Config> {
     setInterval(() => {
       if (!this.hasPendingChanges) return;
       if (this.isDragDropping) return;
+      console.log("got here");
       const changes = this.diffMaker.getAndClearCurrentChanges();
       this.io.sendPartialState({
         type: "PartialState",

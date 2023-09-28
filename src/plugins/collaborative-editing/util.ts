@@ -1,7 +1,6 @@
+import { Calc, ItemModel } from "#globals";
 import { ItemState } from "./graphstate";
 import { ModelDefaults } from "./model-defaults";
-import { ItemModel } from "globals/models";
-import { Calc } from "globals/window";
 
 export function deepObjEq(a: any, b: any) {
   if (typeof a !== typeof b) return false;

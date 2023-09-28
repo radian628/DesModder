@@ -1,3 +1,4 @@
+import { Calc } from "#globals";
 import CollaborativeEditing from ".";
 import {
   CollaborativeEditingSessionMessageToClientParser,
@@ -7,7 +8,6 @@ import {
 import { generateListDiff } from "./diff";
 import { GraphState } from "./graphstate";
 import { getDesyncedExpressionIDs, itemStateEq } from "./util";
-import { Calc } from "globals/window";
 import { z } from "zod";
 
 export type ReceiveHandler = (
