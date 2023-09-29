@@ -1,9 +1,26 @@
 import { Component, jsx, mountToNode } from "#DCGView";
+import { GraphState } from "@desmodder/graph-state";
 import { Inserter, PluginController } from "../PluginController";
 import "./index.less";
 import { format } from "localization/i18n-core";
-import { IfElse, InlineMathInputView } from "src/components";
+import { For, IfElse, InlineMathInputView } from "src/components";
 import { Calc, ExpressionModel, FolderModel } from "src/globals";
+
+function calcGraphStateCost(state: GraphState) {
+  return state.expressions.list.reduce(
+    (prev, curr) => {
+      if (curr.type !== "expression" || !curr.latex) return prev;
+
+      const golfStats = getGolfStats(curr.latex);
+
+      return {
+        width: prev.width + golfStats.width,
+        symbols: prev.symbols + golfStats.symbols,
+      };
+    },
+    { width: 0, symbols: 0 }
+  );
+}
 
 function calcWidthInPixels(domNode?: HTMLElement) {
   const rootblock = domNode?.querySelector(".dcg-mq-root-block");
@@ -215,6 +232,139 @@ export class FolderCostPanel extends Component<{
   }
 }
 
+async function getGraphFromHash(hash: string): Promise<{
+  parent_hash?: string;
+  state: GraphState;
+}> {
+  return await (
+    await fetch(`https://www.desmos.com/calculator/${hash}`, {
+      headers: {
+        Accept: "application/json",
+      },
+    })
+  ).json();
+}
+
+async function getEntireGraphHistory(
+  hash: string,
+  state: GraphState
+): Promise<
+  {
+    hash: string;
+    state: GraphState;
+  }[]
+> {
+  const cachedGraphHistory = localStorage.getItem(`dsm-graph-history-${hash}`);
+
+  if (cachedGraphHistory)
+    return await Promise.all(
+      (JSON.parse(cachedGraphHistory) as string[]).map(async (hash) => {
+        return {
+          hash,
+          state: (await getGraphFromHash(hash)).state,
+        };
+      })
+    );
+
+  let parentHash: string | undefined = hash;
+
+  const graphs = [
+    {
+      hash,
+      state,
+    },
+  ];
+
+  while (parentHash) {
+    const parentGraph = await getGraphFromHash(parentHash);
+    graphs.push({
+      hash: parentHash,
+      state: parentGraph.state,
+    });
+    parentHash = parentGraph.parent_hash;
+  }
+
+  localStorage.setItem(
+    `dsm-graph-history-${hash}`,
+    JSON.stringify(graphs.map((g) => g.hash))
+  );
+
+  return graphs;
+}
+
+export class Menu extends Component {
+  historyCosts: {
+    hash: string;
+    symbols: number;
+    width: number;
+  }[] = [];
+
+  inProgress = false;
+
+  template() {
+    console.log("histroycosts", this.historyCosts);
+
+    return (
+      <div class="dcg-popover-interior">
+        <button
+          onClick={async () => {
+            this.inProgress = true;
+            this.update();
+            const history = await getEntireGraphHistory(
+              window.location.pathname.split("/").at(-1) as string,
+              Calc.getState()
+            );
+            this.inProgress = false;
+            this.update();
+
+            this.historyCosts = history
+              .map((h) => {
+                return {
+                  hash: h.hash,
+                  ...calcGraphStateCost(h.state),
+                };
+              })
+              .sort((a, b) => a.symbols - b.symbols)
+              .slice(0, 5);
+
+            this.update();
+          }}
+        >
+          Compare with Graph History
+        </button>
+        {IfElse(() => this.inProgress, {
+          true: () => (
+            <div>
+              Fetching history... (this may take a while the first time)
+            </div>
+          ),
+          false: () => <div></div>,
+        })}
+        <For each={() => this.historyCosts ?? []} key={(e) => e.hash}>
+          <ul class="dsm-code-golf-best-history-list">
+            {(e: Menu["historyCosts"][number]) => (
+              // TODO: localization support
+              <li>
+                <div>
+                  Hash:{" "}
+                  <a
+                    target="_blank"
+                    href={() => `https://www.desmos.com/calculator/${e.hash}`}
+                  >
+                    {() => e.hash}
+                  </a>
+                </div>
+                <div>Symbols: {() => e.symbols}</div>
+                <div>Width: {() => Math.round(e.width).toString() + "px"}</div>
+              </li>
+            )}
+          </ul>
+        </For>
+      </div>
+    );
+  }
+}
+
 export default class CodeGolf extends PluginController {
   static id = "code-golf" as const;
   static enabledByDefault = false;
@@ -232,7 +382,14 @@ export default class CodeGolf extends PluginController {
 
   afterConfigChange(): void {}
 
-  afterEnable() {}
+  afterEnable() {
+    this.dsm.pillboxMenus?.addPillboxButton({
+      id: "dsm-codegolf-menu",
+      tooltip: "code-golf-name",
+      iconClass: "dcg-icon-keyboard",
+      popup: () => <Menu></Menu>,
+    });
+  }
 
   afterDisable() {}
 }
