@@ -45,6 +45,7 @@ const categoryPlugins: Record<string, PluginID[]> = {
     "folder-tools",
     "custom-mathquill-config",
     "code-golf",
+    "anti-lag",
   ],
   visual: [
     "set-primary-color",

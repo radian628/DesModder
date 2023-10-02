@@ -27,6 +27,7 @@ import TextMode from "./text-mode";
 import VideoCreator from "./video-creator";
 import Wakatime from "./wakatime";
 import WolframToDesmos from "./wolfram2desmos";
+import AntiLag from "./anti-lag";
 
 interface ConfigItemGeneric {
   key: string;
@@ -132,6 +133,7 @@ export const keyToPlugin = {
   exprActionButtons: ExprActionButtons,
   codeGolf: CodeGolf,
   syntaxHighlighting: SyntaxHighlighting,
+  antiLag: AntiLag,
 } satisfies Record<string, Plugin<any>>;
 
 export const pluginList = Object.values(keyToPlugin);
@@ -186,6 +188,7 @@ export class TransparentPlugins implements KeyToPluginInstance {
   get exprActionButtons () { return this.ep["expr-action-buttons"]; }
   get codeGolf () { return this.ep["code-golf"]; }
   get syntaxHighlighting () { return this.ep["syntax-highlighting"]}
+  get antiLag() { return this.ep["anti-lag"]; } 
 }
 
 export type IDToPluginSettings = {

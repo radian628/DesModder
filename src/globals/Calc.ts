@@ -229,6 +229,10 @@ interface CalcPrivate {
       workerPoolConnection: {
         killWorker: () => void;
       };
+      workerPool: {
+        killWorker: (worker: Worker) => void;
+        workers: Worker[];
+      };
       notifyWhenSynced: (cb: () => void) => void;
     };
     listModel: {
