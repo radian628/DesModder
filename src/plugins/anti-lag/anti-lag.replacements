@@ -1,0 +1,29 @@
+# Replacements for Anti-Lag
+
+*plugin* `anti-lag`
+
+## Replace really big expressions with placeholders to prevent lag.
+
+*Description* `Replace really big expressions with placeholders to stop lag`
+
+*Find* => `$mathExprItem`
+```js
+$DCGView.createElement("div", {
+    class: ()=>({
+        "dcg-do-not-blur": !0,
+        "dcg-expressionitem": !0,
+        "dcg-mathitem": !0,
+        __rest0__
+        }),
+        __rest1__
+}, $DCGView.createElement("div", {
+                class: $DCGView.const("dcg-fade-container"),
+                onTapStart: this.bindFn(this.onMouseSelect),
+                onTap: this.bindFn(this.onMouseSelect)
+            }, __rest3__), __rest4__)
+```
+
+*Replace* `$mathExprItem` with
+```js
+$mathExprItem
+```

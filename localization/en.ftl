@@ -337,6 +337,3 @@ syntax-highlighting-opt-underlineHighlightedRanges-desc = Puts a dark underline 
 ## Anti-Lag
 anti-lag-name = Anti-Lag
 anti-lag-desc = Tools for preventing Desmos from lagging and/or freezing.
-anti-lag-kill-workers = Reload Evaluator
-anti-lag-kill-workers-tooltip = Sometimes, Desmos will keep calculating a slow, long-running expression (e.g. a sum of a trillion sine waves) even after you remove it. Pressing this button will force Desmos to stop computing this slow computation. 
-anti-lag-kill-workers-toast = Evaluator has been reloaded!

@@ -1,34 +1,19 @@
 import { Component, jsx } from "#DCGView";
-import { Calc } from "src/globals";
+import { Calc, ExpressionModel, ItemModel } from "src/globals";
 import { PluginController } from "../PluginController";
 import { format } from "#i18n";
 import { Tooltip } from "src/components";
 
-export class AntiLagMenu extends Component {
+class LagPlaceholder extends Component<{
+  model: ExpressionModel;
+  antiLag: AntiLag;
+}> {
   template() {
     return (
-      <div class="dcg-popover-menu dsm-anti-lag-menu">
-        <div class="dcg-popover-interior">
-          <Tooltip
-            gravity="s"
-            tooltip={format("anti-lag-kill-workers-tooltip")}
-          >
-            <button
-              onClick={() => {
-                for (const w of Calc.controller.evaluator.workerPool.workers)
-                  Calc.controller.evaluator.workerPool.killWorker(w);
-                setTimeout(() => {
-                  Calc.controller._showToast({
-                    message: format("anti-lag-kill-workers-toast"),
-                  });
-                  console.log("got ehre");
-                });
-              }}
-            >
-              {format("anti-lag-kill-workers")}
-            </button>
-          </Tooltip>
-        </div>
+      <div class="dsm-anti-lag-placeholder">
+        {format("dsm-anti-lag-big-expr", {
+          size: this.props.model().latex?.toString() ?? "0",
+        })}
       </div>
     );
   }
@@ -38,18 +23,15 @@ export default class AntiLag extends PluginController {
   static id = "anti-lag" as const;
   static enabledByDefault = true;
 
+  lagPlaceholder(model: ExpressionModel) {
+    return () => (
+      <LagPlaceholder antiLag={() => this} model={() => model}></LagPlaceholder>
+    );
+  }
+
   afterConfigChange(): void {}
 
-  afterEnable() {
-    this.dsm.pillboxMenus?.addPillboxButton({
-      id: "dsm-anti-lag-menu",
-      tooltip: "anti-lag-name",
-      iconClass: "dsm-icon-pie-chart",
-      popup: () => <AntiLagMenu></AntiLagMenu>,
-    });
-  }
+  afterEnable() {}
 
-  afterDisable() {
-    this.dsm.pillboxMenus?.removePillboxButton("dsm-anti-lag-menu");
-  }
+  afterDisable() {}
 }
